@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model Vehicle {
+  id_record                  Int       @id @unique(map: "id") @default(autoincrement())
+  id                         String?
+  media                      String?
+  brand                      String?
+  model                      String?
+  prices                     Int?
+  year                       Int?
+  owner                      Int?
+  home                       Int?
+  odometer                   Int?
+  type                       String?
+  location                   String?
+  business_channel           String?
+  processedAt                DateTime? @default(now())
+  color                      String?   @db.VarChar(100)
+  accesories                 String?   @db.VarChar(100)
+  license_plate              String?   @db.VarChar(10)
+  received_flag              String?   @db.VarChar(10)
+  days_in_stock              String?   @db.VarChar(10)
+  published_in_web           String?   @db.VarChar(10)
+  engine_number              String?   @db.VarChar(100)
+  reserved_by_user_email     String?   @db.VarChar(100)
+  reserved_by_user_name      String?   @db.VarChar(100)
+  reserved_dt                DateTime? @db.DateTime(0)
+  expiration_dt              DateTime? @db.DateTime(0)
+  opportunity_sale_id        String?   @db.VarChar(100)
+  factory_invoicing_dt       DateTime? @db.DateTime(0)
+  factory_status             String?   @db.VarChar(100)
+  status_name                String?   @db.VarChar(100)
+  fuel_name                  String?   @db.VarChar(100)
+  availability_status_name   String?   @db.VarChar(100)
+  availability_status_code   String?   @db.VarChar(100)
+  created_fullname           String?   @db.VarChar(100)
+  created_dt                 DateTime? @db.DateTime(0)
+  deleted_flag               String?   @db.VarChar(10)
+  owner_branch_code          String?   @db.VarChar(100)
+  saving_plan_group          String?   @db.VarChar(100)
+  saving_plan_order          String?   @db.VarChar(100)
+  integration_reference_code String?   @db.VarChar(100)
+  version                    String?   @db.VarChar(100)
+  purchase_price             Int?
+}
+
+model AllVehicle {
+  id_record                  Int       @id @unique(map: "id") @default(autoincrement())
+  id                         String?
+  media                      String?
+  brand                      String?
+  model                      String?
+  prices                     Int?
+  year                       Int?
+  owner                      Int?
+  home                       Int?
+  odometer                   Int?
+  type                       String?
+  location                   String?
+  business_channel           String?
+  processedAt                DateTime? @default(now())
+  color                      String?   @db.VarChar(100)
+  accesories                 String?   @db.VarChar(100)
+  license_plate              String?   @db.VarChar(10)
+  received_flag              String?   @db.VarChar(10)
+  days_in_stock              String?   @db.VarChar(10)
+  published_in_web           String?   @db.VarChar(10)
+  engine_number              String?   @db.VarChar(100)
+  reserved_by_user_email     String?   @db.VarChar(100)
+  reserved_by_user_name      String?   @db.VarChar(100)
+  reserved_dt                DateTime? @db.DateTime(0)
+  expiration_dt              DateTime? @db.DateTime(0)
+  opportunity_sale_id        String?   @db.VarChar(100)
+  factory_invoicing_dt       DateTime? @db.DateTime(0)
+  factory_status             String?   @db.VarChar(100)
+  status_name                String?   @db.VarChar(100)
+  fuel_name                  String?   @db.VarChar(100)
+  availability_status_name   String?   @db.VarChar(100)
+  availability_status_code   String?   @db.VarChar(100)
+  created_fullname           String?   @db.VarChar(100)
+  created_dt                 DateTime? @db.DateTime(0)
+  deleted_flag               String?   @db.VarChar(10)
+  owner_branch_code          String?   @db.VarChar(100)
+  saving_plan_group          String?   @db.VarChar(100)
+  saving_plan_order          String?   @db.VarChar(100)
+  integration_reference_code String?   @db.VarChar(100)
+  version                    String?   @db.VarChar(100)
+  purchase_price             Int?
+}
