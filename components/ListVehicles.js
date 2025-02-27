@@ -39,7 +39,7 @@ export default function List({ list }) {
                   </div>
                   <div className="flex flex-1 flex-col justify-between bg-white p-6">
                   <div className="flex-1">
-                      <p className="text-sm font-semibold text-gray-500 uppercase text-center">
+                      <p className="text-sm font-semibold text-gray-600 uppercase text-center">
                     
                       {listItem.owner_branch_code}
                       
@@ -75,11 +75,11 @@ export default function List({ list }) {
                     <hr />
 
                     <div className="flex flex-wrap gap-2 text-sm xl:text-xs justify-center mx-2 px-2 pt-4 text-gray-400 font-light">
-                      <div className="flex items-center justify-center w-full xl:w-auto xl:flex-1">
+                      <div className="flex items-center text-gray-600 justify-center w-full xl:w-auto xl:flex-1">
                         <IconYear />
                         <p>{listItem.year | 0}</p>
                       </div>
-                      <div className="flex items-center justify-center w-full xl:w-auto xl:flex-1">
+                      <div className="flex items-center text-gray-600 justify-center w-full xl:w-auto xl:flex-1">
                         <IconKm />
                         <p>
                           {new Intl.NumberFormat("es-EC", {
@@ -88,7 +88,7 @@ export default function List({ list }) {
                           }).format(listItem.odometer | 0)}
                         </p>
                       </div>
-                      <div className="flex items-center justify-center w-full xl:w-auto xl:flex-1">
+                      <div className="flex items-center text-gray-600 justify-center w-full xl:w-auto xl:flex-1">
                         <IconEngine />
                         <p>
                           {new Intl.NumberFormat("es-EC", {
@@ -97,7 +97,7 @@ export default function List({ list }) {
                           }).format(listItem.business_channel | 0)}
                         </p>
                       </div>
-                      <div className="flex items-center justify-center w-full">
+                      <div className="flex items-center text-gray-600 justify-center w-full">
                         <IconFuel />
                         <p class="uppercase">{ listItem.fuel_name + " " + listItem.saving_plan_order }</p>
                       </div>

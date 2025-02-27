@@ -136,6 +136,18 @@ function Filters({ tags }) {
       tagsRevised.push("Combustible: " + tag[1]);
     }
 
+    if (tag[0] === "color") {
+      tagsRevised.push("Color: " + tag[1]);
+    }
+
+    if (tag[0] === "saving_plan_order") {
+      tagsRevised.push("Transmisión: " + tag[1]);
+    }
+
+    if (tag[0] === "license_plate") {
+      tagsRevised.push("Último dígito de placa: " + tag[1]);
+    }
+
     if (tag[0] === "kilometers") {
       tagsRevised.push("Menor kilometraje");
     }
