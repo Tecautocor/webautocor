@@ -10,9 +10,11 @@ export default function BudgetTool({
   time,
   setTime,
 }) {
-  const initialPayment = Number(value) / 2;
+  console.log('value: ',value);
+  console.log('amount: ',amount);
+  console.log('setAmount: ',setAmount);
   useEffect(() => {
-    setAmount(initialPayment);
+    setAmount( Number(value) * 0.3);
   }, [value]);
 
   return (
@@ -22,15 +24,9 @@ export default function BudgetTool({
           <div className="lg:w-1/2 px-4 py-10 bg-[#F4F4F4] flex flex-col justify-center">
             <SectionText title="Compra tu auto" subtitle="COTIZADOR EN LÍNEA" />
 
-
-
-
-
-
-
             <div className="mb-2 mt-6"> 
               <label htmlFor="amount" className="sr-only">
-                Entrada
+                Entrada 1
               </label>
               <div className="flex bg-white shadow-lg rounded pr-4">
                 <p className="pl-10 py-4 font-light pr-10 text-xs">Entrada</p>
@@ -41,6 +37,8 @@ export default function BudgetTool({
                     className="block w-full rounded-md py-2 px-3.5 text-gray-900 placeholder:text-gray-400 focus:ring-none text-xs sm:leading-6"
                     onChange={(e) => {
                       setAmount(Number(e.target.value) * Number(value)); // Calcula el valor seleccionado en base al porcentaje
+                      console.log('Number(e.target.value): ', Number(e.target.value));
+                      console.log('Number(value): ', Number(value));
                     }}
                   >
                     <option value="0.3">30%</option>
@@ -55,7 +53,7 @@ export default function BudgetTool({
             </div>
 
 
-            <div className="my-2">
+            <div className="mb-2 mt-6">
               <label htmlFor="time" className="sr-only">
                 Plazo
               </label>
@@ -75,6 +73,8 @@ export default function BudgetTool({
                     <option value="36">36 meses</option>
                     <option value="48">48 meses</option>
                   </select>
+                  <div className="flex justify-between text-xs -mt-2">
+                  </div>
                 </div>
                 <YearIcon />
               </div>
@@ -112,7 +112,7 @@ export default function BudgetTool({
                       {new Intl.NumberFormat("es-EC", {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
-                      }).format(Number(calcCuotaXMeses(amount, time)))}
+                      }).format(Number(calcCuotaXMeses(value-amount, time)))}
                     </span>
                     <span className="text-sm font-semibold">/mes</span>
                   </p>
@@ -123,7 +123,7 @@ export default function BudgetTool({
                   <p className="text-lg font-semibold -mb-1">Plazo</p>
                   <p className="text-5xl mb-1">
                     <span className="font-bold">{time}</span>
-                    <span className="text-sm font-semibold">meses</span>
+                    <span className="text-sm font-semibold"> meses</span>
                   </p>
                 </div>
               </div>
@@ -138,7 +138,7 @@ export default function BudgetTool({
               <FormBudget
                 time={time}
                 initialPayment={amount}
-                monthlyPayment={calcCuotaXMeses(amount, time)}
+                monthlyPayment={calcCuotaXMeses(value-amount, time)}
               />
             </div>
           </div>
