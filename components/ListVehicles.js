@@ -52,7 +52,7 @@ export default function List({ list }) {
                     </div>
 
                     <div className="flex justify-between py-2 items-center mb-2">
-                      <div className="text-main text-2xl font-bold flex justify-center mx-2">
+                      <div className="text-main text-1xl font-bold flex justify-center mx-2">
                         ${" "}
                         {new Intl.NumberFormat("es-EC", {
                           minimumFractionDigits: 0,

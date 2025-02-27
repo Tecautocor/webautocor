@@ -10,7 +10,7 @@ export default function BudgetTool({
   time,
   setTime,
 }) {
-  const initialPayment = Number(value) * 0.3;
+  const initialPayment = Number(value) / 2;
   useEffect(() => {
     setAmount(initialPayment);
   }, [value]);
@@ -22,75 +22,69 @@ export default function BudgetTool({
           <div className="lg:w-1/2 px-4 py-10 bg-[#F4F4F4] flex flex-col justify-center">
             <SectionText title="Compra tu auto" subtitle="COTIZADOR EN LÍNEA" />
 
-            <div className="mb-2 mt-6 ">
-              <label htmlFor="budget" className="sr-only">
-                Entrada 1
+
+
+
+
+
+
+            <div className="mb-2 mt-6"> 
+              <label htmlFor="amount" className="sr-only">
+                Entrada
               </label>
               <div className="flex bg-white shadow-lg rounded pr-4">
-                <p className="pl-10 py-4 font-light pr-10 text-xs">Entrada 2</p>
+                <p className="pl-10 py-4 font-light pr-10 text-xs">Entrada</p>
                 <div className="flex flex-col flex-1">
-                  <input
-                    type="range"
+                  <select
                     id="amount"
                     name="amount"
-                    min={initialPayment}
-                    step="1"
-                    defaultValue={initialPayment}
-                    max={Number(value) * 0.8}
-                    className="block w-full rounded-md py-2 px-3.5 text-gray-900 placeholder:text-gray-400 focus:ring-none text-xs sm:leading-6 accent-main"
+                    className="block w-full rounded-md py-2 px-3.5 text-gray-900 placeholder:text-gray-400 focus:ring-none text-xs sm:leading-6"
                     onChange={(e) => {
-                      setAmount(Number(e.target.value));
+                      setAmount(Number(e.target.value) * Number(value)); // Calcula el valor seleccionado en base al porcentaje
                     }}
-                  />
+                  >
+                    <option value="0.3">30%</option>
+                    <option value="0.4">40%</option>
+                    <option value="0.5">50%</option>
+                  </select>
                   <div className="flex justify-between text-xs -mt-2">
-                    <span>
-                      ${" x3 "}
-                      {new Intl.NumberFormat("es-EC", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      }).format(Number(initialPayment))}
-                    </span>
-                    <span>
-                      ${" x4 "}
-                      {new Intl.NumberFormat("es-EC", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      }).format(Number(value) * 0.8)}
-                    </span>
                   </div>
                 </div>
                 <BudgetIcon />
               </div>
             </div>
 
+
             <div className="my-2">
-              <label htmlFor="budget" className="sr-only">
+              <label htmlFor="time" className="sr-only">
                 Plazo
               </label>
               <div className="flex bg-white shadow-lg rounded pr-4">
                 <p className="pl-10 py-4 font-light pr-10 text-xs">Plazo</p>
                 <div className="flex flex-col flex-1">
-                  <input
-                    type="range"
+                  <select
                     id="time"
                     name="time"
-                    min="12"
-                    step="1"
-                    max="48"
-                    defaultValue={12}
-                    className="block w-full rounded-md py-2 px-3.5 text-gray-900 placeholder:text-gray-400 focus:ring-none text-xs sm:leading-6 accent-main"
+                    className="block w-full rounded-md py-2 px-3.5 text-gray-900 placeholder:text-gray-400 focus:ring-none text-xs sm:leading-6"
                     onChange={(e) => {
                       setTime(Number(e.target.value));
                     }}
-                  />
-                  <div className="flex justify-between text-xs -mt-2">
-                    <span>12</span>
-                    <span>48 meses</span>
-                  </div>
+                  >
+                    <option value="12">12 meses</option>
+                    <option value="24">24 meses</option>
+                    <option value="36">36 meses</option>
+                    <option value="48">48 meses</option>
+                  </select>
                 </div>
                 <YearIcon />
               </div>
-            </div>
+            </div> 
+
+
+
+
+
+
 
             <div className="flex justify-center divide-x-2 mt-4">
               <div className="bg-[#666666] text-white mt-4 w-full px-4">
