@@ -24,6 +24,9 @@ async function handler(req, res) {
       type,
       agency,
       fuel_name,
+      saving_plan_order,
+      color,
+      license_plate,
     } = req.query;
 
     let page = req.query.page || 1;
@@ -152,7 +155,25 @@ async function handler(req, res) {
       };
     }
 
-    if (brand !== "" && model !== undefined) {
+    if (color !== "" && color !== undefined) {
+      where.color = {
+        equals: color,
+      };
+    }
+
+    if (license_plate !== "" && license_plate !== undefined) {
+      where.license_plate = {
+        endsWith: license_plate.toString(),
+      };
+    }
+
+    if (saving_plan_order !== "" && saving_plan_order !== undefined) {
+      where.saving_plan_order = {
+        equals: saving_plan_order,
+      };
+    }
+
+    if (brand !== "" && brand !== undefined) {
       where.brand = {
         equals: brand,
       };

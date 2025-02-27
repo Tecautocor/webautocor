@@ -56,7 +56,7 @@ export default function Details() {
 
   useEffect(() => {
     if (data) {
-      setAmount(Number(data.result.entitydata.prices[0].value) / 2);
+      setAmount(Number(data.result.entitydata.prices[0].value) * 0.3);
     }
   }, [data]);
 

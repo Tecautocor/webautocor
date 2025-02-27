@@ -61,6 +61,9 @@ export default function FiltersSection({ brands, years, buttonTitle }) {
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedAgency, setSelectedAgency] = useState("");
   const [selectedFuel, setSelectedFuel] = useState("");
+  const [selectedTransmision, setSelectedTransmision] = useState("");
+  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedLicense, setSelectedLicense] = useState("");
   const [selectedOwner, setSelectedOwner] = useState("");
   const [selectedKm, setSelectedKm] = useState("");
   const [selectedMaintenance, setSelectedMaintenance] = useState("");
@@ -90,6 +93,18 @@ export default function FiltersSection({ brands, years, buttonTitle }) {
   useEffect(() => {
     setSelectedFuel(router.query.fuel_name);
   }, [router.query.fuel_name]);
+
+  useEffect(() => {
+    setSelectedTransmision(router.query.saving_plan_order);
+  }, [router.query.saving_plan_order]);
+
+  useEffect(() => {
+    setSelectedColor(router.query.color);
+  }, [router.query.color]);
+
+  useEffect(() => {
+    setSelectedColor(router.query.license_plate);
+  }, [router.query.license_plate]);
 
   useEffect(() => {
     if (router.query.owner) setSelectedOwner(router.query.owner);
@@ -281,7 +296,7 @@ export default function FiltersSection({ brands, years, buttonTitle }) {
         </div>
 
         <div className="col-span-1 md:col-span-2 lg:col-span-2">
-          <label htmlFor="fuel" className="sr-only">
+          <label htmlFor="fuel_name" className="sr-only">
             Combustible
           </label>
           <div className="flex bg-white">
@@ -321,6 +336,86 @@ export default function FiltersSection({ brands, years, buttonTitle }) {
                     {store}
                   </option>
                 ))}
+            </select>
+            <BrandIcon />
+          </div>
+        </div>
+
+        <div className="col-span-1 md:col-span-2 lg:col-span-2">
+          <label htmlFor="saving_plan_order" className="sr-only">
+            Transmisión
+          </label>
+          <div className="flex bg-white">
+            <select
+              id="saving_plan_order"
+              name="saving_plan_order"
+              value={selectedTransmision}
+              onChange={(e) => setSelectedTransmision(e.target.value)}
+              className="relative block w-full pl-10 py-3 font-light shadow-lg rounded border-0 focus:z-10 focus:border-main focus:ring-main text-xs"
+            >
+              <option value="">Transmisión</option>
+              <option key='Automatica' value='Automatica'>Automatica</option>
+              <option key='Manual' value='Manual'>Manual</option>
+              <option key='Electrico ' value='Electrico '>Electrico </option>
+            </select>
+            <BrandIcon />
+          </div>
+        </div>
+
+        <div className="col-span-1 md:col-span-2 lg:col-span-2">
+          <label htmlFor="color" className="sr-only">
+            Color
+          </label>
+          <div className="flex bg-white">
+            <select
+              id="color"
+              name="color"
+              value={selectedColor}
+              onChange={(e) => setSelectedColor(e.target.value)}
+              className="relative block w-full pl-10 py-3 font-light shadow-lg rounded border-0 focus:z-10 focus:border-main focus:ring-main text-xs"
+            >
+              <option value="">Color</option>
+              <option key='AZUL' value='AZUL'>AZUL</option>
+              <option key='BEIGE' value='BEIGE'>BEIGE</option>
+              <option key='BLANCO ' value='BLANCO '>BLANCO</option>
+              <option key='CAFE ' value='CAFE '>CAFE</option>
+              <option key='CREMA ' value='CREMA '>CREMA</option>
+              <option key='DORADO ' value='DORADO '>DORADO</option>
+              <option key='NEGRO ' value='NEGRO '>NEGRO</option>
+              <option key='PLATA ' value='PLATA '>PLATA</option>
+              <option key='PLATEADO ' value='PLATEADO '>PLATEADO</option>
+              <option key='PLOMO ' value='PLOMO '>PLOMO</option>
+              <option key='ROJO ' value='ROJO '>ROJO</option>
+              <option key='VERDE ' value='VERDE '>VERDE</option>
+              <option key='VINO ' value='VINO '>VINO</option>
+            </select>
+            <BrandIcon />
+          </div>
+        </div>
+
+        <div className="col-span-1 md:col-span-2 lg:col-span-2">
+          <label htmlFor="license_plate" className="sr-only">
+            Último dígito de placa
+          </label>
+          <div className="flex bg-white">
+            <select
+              id="license_plate"
+              name="license_plate"
+              value={selectedLicense}
+              onChange={(e) => setSelectedLicense(e.target.value)}
+              className="relative block w-full pl-10 py-3 font-light shadow-lg rounded border-0 focus:z-10 focus:border-main focus:ring-main text-xs"
+            >
+              <option value="">Último dígito de placa</option>
+              <option key='0' value='0'>0</option>
+              <option key='1' value='1'>1</option>
+              <option key='2' value='2'>2</option>
+              <option key='3' value='3'>3</option>
+              <option key='4' value='4'>4</option>
+              <option key='5' value='5'>5</option>
+              <option key='6' value='6'>6</option>
+              <option key='7' value='7'>7</option>
+              <option key='8' value='8'>8</option>
+              <option key='9' value='9'>9</option>
             </select>
             <BrandIcon />
           </div>
