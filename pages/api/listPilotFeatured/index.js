@@ -7,8 +7,6 @@ export const config = {
 };
 
 async function handler(req, res) {
-  
-  console.log('Se ejecuto api/listPilotFeatured ');
   if (req.method === "POST") {
     const { token } = req.query;
 
@@ -44,7 +42,7 @@ async function handler(req, res) {
           },
         },
       });
-      console.log('respuesta desde Pilot: ', response.data);
+
       return res.status(200).json(response.data);
     } catch (err) {
       console.log(err);

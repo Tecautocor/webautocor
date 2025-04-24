@@ -21,7 +21,6 @@ async function handler(req, res) {
 
       return res.status(200).json(response);
     } catch (err) {
-      console.error("Error fetching vehicle years:", err);
       return res.status(404).end();
     }
   }

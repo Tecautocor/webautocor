@@ -16,9 +16,9 @@ const agencias = [
     id: 2,
     src: "/autocor-local-cumbaya.jpg",
     name: "Autocor Cumbaya",
-    address: "Av. Oswaldo Guayasamín y Santa Lucía",
+    address: "Av. Oswaldo Guayasamín",
     time: "Lunes a Viernes de 9:00 a 18:30; Sábado de 09:00 a 17:00 y Domingo de 10:00 a 14:00",
-    location: { latitude: -0.1999909, longitude: -78.4378466 },
+    location: { latitude: -0.20599, longitude: -78.43362 },
     phone: "+593 99 820 8817"
   },
   {
@@ -52,11 +52,11 @@ const agencias = [
   },
   {
     id: 6,
-    src: "/autocor-local-riococa.jpg",
-    name: "Autocor Río Coca",
-    address: "Av. Río Coca E5 255 y Paris",
-    time: "Lunes a Viernes de 09:00 a 18:00, Sábado de 09:00 a 17:00 y Domingo no hay atención",
-    location: { latitude: -0.1627368, longitude: -78.4774867 },
+    src: "/autocor-local-prensa.jpg",
+    name: "Autocor Prensa",
+    address: "Av. La Prensa N46-15 y, Zamora, Frente al Tecnologico Cordillera",
+    time: "Lunes a Viernes de 08:00 a 18:30, Sábado de 09:00 a 17:00 y Domingo de 10:00 - 14:00",
+    location: { latitude: -0.15546, longitude: -78.48885 },
     phone: "+593 98 300 4214"
   },
   {

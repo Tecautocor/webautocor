@@ -341,7 +341,7 @@ export default function FiltersSection({ brands, years, buttonTitle }) {
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-2 lg:col-span-2">
+        <div className="col-span-1 md:col-span-4 lg:col-span-3">
           <label htmlFor="saving_plan_order" className="sr-only">
             Transmisión
           </label>
@@ -362,7 +362,7 @@ export default function FiltersSection({ brands, years, buttonTitle }) {
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-2 lg:col-span-2">
+        <div className="col-span-1 md:col-span-4 lg:col-span-3">
           <label htmlFor="color" className="sr-only">
             Color
           </label>
@@ -393,7 +393,7 @@ export default function FiltersSection({ brands, years, buttonTitle }) {
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-2 lg:col-span-2">
+        <div className="col-span-1 md:col-span-4 lg:col-span-2">
           <label htmlFor="license_plate" className="sr-only">
             Último dígito de placa
           </label>
