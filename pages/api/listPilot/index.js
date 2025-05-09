@@ -214,7 +214,6 @@ async function handler(req, res) {
         equals: type,
       };
     }
-    console.log('listPilot ');
     try {
       const responseCount = await db.vehicle.count({ where: where });
 
@@ -223,7 +222,6 @@ async function handler(req, res) {
         take: perPage,
         skip: (page - 1) * perPage,
       });
-      console.log('listPilot response: ', response);
 
       return res.status(200).json({
         aditional_data: {

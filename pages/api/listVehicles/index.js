@@ -41,7 +41,11 @@ async function handler(req, res) {
         },
       });
 
-      return res.status(200).json(response);
+      return res.status(200).json({ 
+        Total: response.length ,
+        AutosDisponibles: response
+      });
+      
     } catch (err) {
       console.error("Failed to filter vehicles:", err);
       return res.status(500).json({ error: "Failed to fetch filtered vehicles." });

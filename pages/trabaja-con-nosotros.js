@@ -3,6 +3,8 @@ import Layout from "../components/Layout";
 import { useState } from "react";
 import * as Yup from "yup";
 
+const FILE_SIZE_LIMIT_MB = 5;
+
 const FormSchema = Yup.object().shape({
   firstName: Yup.string().required("Campo Requerido"),
   lastName: Yup.string().required("Campo Requerido"),
@@ -19,21 +21,17 @@ const FormSchema = Yup.object().shape({
     .required("El número de contacto es obligatorio"),
   email: Yup.string().email("Correo no válido").required("Campo Requerido"),
   position: Yup.string().required("Campo Requerido"),
-  resume: Yup.mixed()
-    .required("Campo Requerido")
-    .test(
-      "fileFormat",
-      "Solo PDF o Word",
-      (value) =>
-        value &&
-        ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(
-          value.type
-        )
-    ),
-  consent: Yup.boolean().oneOf(
-    [true],
-    "Debes aceptar el tratamiento de datos personales"
-  ),
+  // resume: Yup.mixed()
+  //   .required("Campo Requerido")
+  //   .test("fileFormat", "Solo PDF o Word", (value) =>
+  //     value
+  //       ? ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(value.type)
+  //       : false
+  //   )
+  //   .test("fileSize", `El archivo no debe superar los ${FILE_SIZE_LIMIT_MB}MB`, (value) =>
+  //     value ? value.size <= FILE_SIZE_LIMIT_MB * 1024 * 1024 : false
+  //   ),
+  consent: Yup.boolean().oneOf([true], "Debes aceptar el tratamiento de datos personales"),
 });
 
 export default function Form() {
@@ -42,7 +40,7 @@ export default function Form() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
 
-  async function createRecord(values, resetForm) {
+  async function sendEmail(values) {
     setIsLoading(true);
     setIsError(false);
     setIsSuccess(false);
@@ -53,16 +51,38 @@ export default function Form() {
         formData.append(key, values[key]);
       });
 
-      console.log("Enviando datos:", values); // Aquí iría la llamada real
+      // Send the form data to your API endpoint
+      const response = await fetch('/api/sendMail', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send email');
+      }
+      console.log('Email sent successfully:', await response.json());
       setIsLoading(false);
       setIsSuccess(true);
-      resetForm();
-      setSelectedFileName("");
     } catch (error) {
+      console.error('Error sending email:', error);
       setIsLoading(false);
       setIsError(true);
     }
   }
+
+  const initialValues = {
+    firstName: "",
+    lastName: "",
+    idNumber: "",
+    birthDate: "",
+    city: "",
+    country: "",
+    phone: "",
+    email: "",
+    position: "",
+    resume: null,
+    consent: false,
+  };
 
   return (
     <Layout selected="form">
@@ -71,29 +91,18 @@ export default function Form() {
           APLICA A UNA VACANTE EN AUTOCOR
         </h1>
 
-
         {isSuccess ? (
           <p className="font-bold py-10 text-lg text-center text-green-600">
             Tu información fue enviada correctamente
           </p>
         ) : (
           <Formik
-            initialValues={{
-              firstName: "",
-              lastName: "",
-              idNumber: "",
-              birthDate: "",
-              city: "",
-              country: "",
-              phone: "",
-              email: "",
-              position: "",
-              resume: null,
-              consent: false,
-            }}
+            initialValues={initialValues}
             validationSchema={FormSchema}
             onSubmit={(values, { resetForm }) => {
-              createRecord(values, resetForm);
+              sendEmail(values);
+              resetForm({ values: initialValues });
+              setSelectedFileName("");
             }}
           >
             {({ setFieldValue }) => (
