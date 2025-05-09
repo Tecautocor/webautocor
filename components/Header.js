@@ -5,7 +5,6 @@ import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 
 const navigation = [
-  { name: "Inicio", href: "/", slug: "home" },
   { name: "Quiénes somos", href: "/quienes-somos", slug: "about" },
   { name: "Vehículos", href: "/vehiculos", slug: "vehicles" },
   { name: "Compramos tu auto", href: "/compramos-tu-auto", slug: "buy" },
@@ -13,6 +12,11 @@ const navigation = [
     name: "Planes de financiamiento",
     href: "/planes-de-financiamiento",
     slug: "financing",
+  },
+  {
+    name: "Trabaja con nosotros",
+    href: "/trabaja-con-nosotros",
+    slug: "work",
   },
   { name: "Contáctanos", href: "/contactanos", slug: "contact" },
 ];

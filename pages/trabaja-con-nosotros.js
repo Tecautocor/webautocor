@@ -21,16 +21,16 @@ const FormSchema = Yup.object().shape({
     .required("El número de contacto es obligatorio"),
   email: Yup.string().email("Correo no válido").required("Campo Requerido"),
   position: Yup.string().required("Campo Requerido"),
-  // resume: Yup.mixed()
-  //   .required("Campo Requerido")
-  //   .test("fileFormat", "Solo PDF o Word", (value) =>
-  //     value
-  //       ? ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(value.type)
-  //       : false
-  //   )
-  //   .test("fileSize", `El archivo no debe superar los ${FILE_SIZE_LIMIT_MB}MB`, (value) =>
-  //     value ? value.size <= FILE_SIZE_LIMIT_MB * 1024 * 1024 : false
-  //   ),
+  resume: Yup.mixed()
+    .required("Campo Requerido")
+    .test("fileFormat", "Solo PDF o Word", (value) =>
+      value
+        ? ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(value.type)
+        : false
+    )
+    .test("fileSize", `El archivo no debe superar los ${FILE_SIZE_LIMIT_MB}MB`, (value) =>
+      value ? value.size <= FILE_SIZE_LIMIT_MB * 1024 * 1024 : false
+    ),
   consent: Yup.boolean().oneOf([true], "Debes aceptar el tratamiento de datos personales"),
 });
 
