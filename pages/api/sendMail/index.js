@@ -36,8 +36,8 @@ async function handler(req, res) {
     <!DOCTYPE html>
     <html>
     <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Nueva aplicación de empleo</title>
         <style>
             body {
@@ -112,6 +112,10 @@ async function handler(req, res) {
                 <span class="field-label">Cargo de interés:</span>
                 <span style="font-weight: bold; color: #1a365d;">${fields.position}</span>
             </div>
+            <div class="field">
+                <span class="field-label">Aspiración salarial:</span>
+                <span>$${Number(fields.salaryExpectation).toLocaleString()}</span>
+            </div>
         </div>
         <div class="footer">
             <p>Este correo fue generado automáticamente desde el formulario de empleo de AUTOCOR.</p>
@@ -156,3 +160,4 @@ async function handler(req, res) {
 }
 
 export default handler;
+

@@ -32,6 +32,10 @@ const FormSchema = Yup.object().shape({
       value ? value.size <= FILE_SIZE_LIMIT_MB * 1024 * 1024 : false
     ),
   consent: Yup.boolean().oneOf([true], "Debes aceptar el tratamiento de datos personales"),
+  salaryExpectation: Yup.string()
+    .matches(/^\d+$/, "Solo se permiten números")
+    .max(4, "Máximo 4 dígitos")
+    .required("Campo Requerido"),
 });
 
 export default function Form() {
@@ -82,6 +86,7 @@ export default function Form() {
     position: "",
     resume: null,
     consent: false,
+    salaryExpectation: "", // <-- nuevo campo
   };
 
   return (
@@ -239,6 +244,41 @@ export default function Form() {
                     <option value="TALLER">TALLER</option>
                   </Field>
                   <ErrorMessage name="position" component="div" className="text-sm text-main mt-1" />
+                </div>
+
+                {/* Aspiración salarial */}
+                <div>
+                  <label className="text-sm font-medium text-gray-800">
+                  Aspiración salarial <span className="text-red-500">*</span>
+                  </label>
+                  <Field name="salaryExpectation">
+                    {({ field, form }) => {
+                      // field.value es el valor en Formik
+                      // Lo formateamos para mostrar con $, comas y limitamos a 4 dígitos sin decimales
+                      const numericValue = field.value.replace(/\D/g, "").slice(0, 4); // solo números, max 4
+                      const formattedValue = numericValue
+                        ? "$" + Number(numericValue).toLocaleString("en-US")
+                        : "";
+
+                      return (
+                        <input
+                          {...field}
+                          type="text"
+                          inputMode="numeric"
+                          maxLength="6" // considerando $, comas y hasta 4 dígitos
+                          className="w-full px-3 py-2 border rounded"
+                          placeholder="Ej: $470"
+                          value={formattedValue}
+                          onChange={(e) => {
+                            // Quitar todo lo que no sea dígito
+                            const onlyNums = e.target.value.replace(/\D/g, "").slice(0, 4);
+                            form.setFieldValue("salaryExpectation", onlyNums);
+                          }}
+                        />
+                      );
+                    }}
+                  </Field>
+                  <ErrorMessage name="salaryExpectation" component="div" className="text-sm text-main mt-1" />
                 </div>
 
                 {/* Adjuntar CV */}
