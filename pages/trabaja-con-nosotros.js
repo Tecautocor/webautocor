@@ -9,7 +9,7 @@ const FormSchema = Yup.object().shape({
   firstName: Yup.string().required("Campo Requerido"),
   lastName: Yup.string().required("Campo Requerido"),
   idNumber: Yup.string()
-    .matches(/^\d{10}$/, "La cédula debe tener exactamente 10 dígitos")
+    .matches(/^\d{10}$/, "La cédula no puede ser mayor a 10 dígitos")
     .required("La cédula o identificación es obligatoria"),
   birthDate: Yup.date()
     .max(new Date(), "La fecha no puede ser futura")
