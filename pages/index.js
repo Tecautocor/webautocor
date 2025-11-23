@@ -1,6 +1,7 @@
 import Layout from "../components/Layout";
 import Brands from "../components/Brands";
 import List from "../components/List";
+import BackgroundCarousel from "../components/BackgroundCarousel";
 
 import { LinkButton, SectionText, Spinner } from "../components/Shared";
 
@@ -36,22 +37,34 @@ export default function Home() {
 
   return (
     <Layout selected="home">
-      <div className="bg-gray-50 flex justify-center flex-col items-center pt-6 pb-16">
-        <div className="px-6 w-full max-w-6xl mx-auto">
+      {/* HERO CON CARRUSEL DE FONDO */}
+      <div className="relative w-full h-[330px] md:h-[420px] flex items-start justify-center pt-12 overflow-hidden">
+
+
+        {/* Carrusel */}
+        <BackgroundCarousel />
+
+        {/* Contenido encima */}
+        <div className="z-10 w-full px-6 max-w-6xl translate-y-6">
           <SearchBar />
         </div>
 
+      </div>
+
+      {/* Contenido debajo del hero */}
+      <div className="w-full bg-gray-50 pt-10 pb-16 flex flex-col items-center">
         <SectionText
           title="Especificaciones"
           subtitle="¿En qué tipo de auto estás interesado?"
         />
-
         <FiltersSection
           brands={brands}
           years={years}
           buttonTitle="Buscar mi Auto"
         />
       </div>
+
+
 
       <div className="bg-white flex justify-center flex-col items-center py-4">
         <div className="pb-10 flex-col justify-center items-center">

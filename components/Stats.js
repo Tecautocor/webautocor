@@ -2,8 +2,8 @@ import Image from "next/image";
 
 const stats = [
   { id: 1, name: "Autos en inventario", value: "+500" },
-  { id: 2, name: "Autos vendidos", value: "+15000" },
-  { id: 3, name: "Agencias", value: "8" },
+  { id: 2, name: "Autos vendidos", value: "+30000" },
+  { id: 3, name: "Agencias", value: "9" },
 ];
 
 export default function Stats() {
