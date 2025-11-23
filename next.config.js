@@ -1,9 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
+  // swcMinify ya no es necesario en Next 15, puedes quitarlo
   images: {
-    domains: ["cdn.pilotsolution.net"],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'cdn.pilotsolution.net',
+        pathname: '/**', // permite cualquier ruta dentro del dominio
+      },
+    ],
   },
 };
 
