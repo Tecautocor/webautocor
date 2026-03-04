@@ -12,7 +12,7 @@ async function handler(req, res) {
       const response = await axios({
         method: "POST",
         url: `https://api.pilotsolution.net/v1/users/auth.php`,
-        params: { username: "jsalcedo@autocor.com.ec", password: "12345" },
+        params: { username: "mcvasconez@autocor.com.ec", password: "Maca2026." },
       });
       return res.status(200).json(response.data.result);
     } catch (err) {

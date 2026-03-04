@@ -18,7 +18,7 @@ async function handler(req, res) {
       const responseToken = await axios({
         method: "POST",
         url: `https://api.pilotsolution.net/v1/users/auth.php`,
-        params: { username: "jsalcedo@autocor.com.ec", password: "12345" },
+        params: { username: "mcvasconez@autocor.com.ec", password: "Maca2026." },
       });
 
       let tokenNew = responseToken.data.result.entitydata;
