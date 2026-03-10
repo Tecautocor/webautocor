@@ -27,6 +27,7 @@ async function handler(req, res) {
       saving_plan_order,
       color,
       license_plate,
+      invoice,
     } = req.query;
 
     let page = req.query.page || 1;
@@ -214,6 +215,13 @@ async function handler(req, res) {
         equals: type,
       };
     }
+
+    if(invoice !== "" && invoice !== undefined) {
+      where.factory_status = {
+        equals: 'SI',
+      };
+    }
+
     try {
       const responseCount = await db.vehicle.count({ where: where });
 

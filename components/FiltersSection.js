@@ -65,6 +65,7 @@ export default function FiltersSection({ brands, years, buttonTitle }) {
   const [selectedColor, setSelectedColor] = useState("");
   const [selectedLicense, setSelectedLicense] = useState("");
   const [selectedOwner, setSelectedOwner] = useState("");
+  const [selectedInvoice, setSelectedInvoice] = useState("");
   const [selectedKm, setSelectedKm] = useState("");
   const [selectedMaintenance, setSelectedMaintenance] = useState("");
   const [selectedPriceFrom, setSelectedPriceFrom] = useState("");
@@ -109,6 +110,10 @@ export default function FiltersSection({ brands, years, buttonTitle }) {
   useEffect(() => {
     if (router.query.owner) setSelectedOwner(router.query.owner);
   }, [router.query.owner]);
+
+  useEffect(() => {
+    if (router.query.invoice) setSelectedInvoice(router.query.invoice);
+  }, [router.query.invoice]);
 
   useEffect(() => {
     if (router.query.kilometers) setSelectedKm(router.query.kilometers);
@@ -341,7 +346,30 @@ export default function FiltersSection({ brands, years, buttonTitle }) {
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-4 lg:col-span-3">
+        <div className="col-span-1 md:col-span-4 lg:col-span-2">
+          <div className="flex bg-white">
+            <div className="flex justify-between px-1 pl-6 py-3 items-center w-full shadow-lg rounded pr-2">
+              <label
+                htmlFor="invoice"
+                className="ml-3 block text-xs font-light text-gray-700"
+              >
+                Auto con factura
+              </label>
+              <input
+                type="checkbox"
+                checked={selectedInvoice}
+                id="invoice"
+                name="invoice"
+                value="invoice"
+                onChange={(e) => setSelectedInvoice(!selectedInvoice)}
+                className="h-4 border-gray-300  text-main focus:ring-main rounded-full"
+              />
+            </div>
+            <StarIcon />
+          </div>
+        </div>
+
+        <div className="col-span-1 md:col-span-4 lg:col-span-2">
           <label htmlFor="saving_plan_order" className="sr-only">
             Transmisión
           </label>
@@ -362,7 +390,7 @@ export default function FiltersSection({ brands, years, buttonTitle }) {
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-4 lg:col-span-3">
+        <div className="col-span-1 md:col-span-4 lg:col-span-2">
           <label htmlFor="color" className="sr-only">
             Color
           </label>
@@ -421,7 +449,7 @@ export default function FiltersSection({ brands, years, buttonTitle }) {
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-4 lg:col-span-3">
+        {/* <div className="col-span-1 md:col-span-4 lg:col-span-3">
           <div className="flex bg-white">
             <div className="flex justify-between px-1 pl-6 py-3 items-center w-full shadow-lg rounded pr-2">
               <label
@@ -488,7 +516,7 @@ export default function FiltersSection({ brands, years, buttonTitle }) {
             </div>
             <MaintenanceIcon />
           </div>
-        </div>
+        </div> */}
 
         <div className="col-span-1 md:col-span-4 lg:col-span-8 bg-white">
           <label htmlFor="model" className="sr-only">

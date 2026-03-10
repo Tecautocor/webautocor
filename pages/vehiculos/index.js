@@ -159,6 +159,10 @@ function Filters({ tags }) {
     if (tag[0] === "type") {
       tagsRevised.push("Tipo: " + tag[1]);
     }
+
+    if (tag[0] === "invoice") {
+      tagsRevised.push("Auto con factura");
+    }
   });
 
   return (
