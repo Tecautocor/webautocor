@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
-const images = ["/background1.jpg", "/background2.jpg", "/background3.jpg"];
+const images = ["/background4.jpeg", "/background5.jpeg", "/background6.jpeg"];
 
 export default function BackgroundCarousel() {
   const [current, setCurrent] = useState(0);
@@ -41,7 +41,7 @@ export default function BackgroundCarousel() {
 
         {/* Overlay clicable limitado al carrusel */}
         <a
-          href="https://walink.co/0c9cac"
+          href="https://walink.co/symv1w"
           target="_blank"
           rel="noopener noreferrer"
           className="absolute top-0 left-0 w-full h-full z-10"
