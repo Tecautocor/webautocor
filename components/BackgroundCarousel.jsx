@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
-const images = ["/background4.jpeg", "/background5.jpeg", "/background6.jpeg"];
+const images = ["/background4.jpg", "/background5.jpg", "/background6.jpg"];
 
 export default function BackgroundCarousel() {
   const [current, setCurrent] = useState(0);
