@@ -153,7 +153,7 @@ function Filters({ tags }) {
     }
 
     if (tag[0] === "homeMaintenance") {
-      tagsRevised.push("Mantenimiento en casa");
+      tagsRevised.push("Vehículo blindado");
     }
 
     if (tag[0] === "type") {
