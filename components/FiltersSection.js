@@ -370,6 +370,29 @@ export default function FiltersSection({ brands, years, buttonTitle }) {
         </div>
 
         <div className="col-span-1 md:col-span-4 lg:col-span-2">
+          <div className="flex bg-white">
+            <div className="flex justify-between px-1 pl-6 py-3 items-center w-full shadow-lg rounded pr-2">
+              <label
+                htmlFor="homeMaintenance"
+                className="ml-3 block text-xs font-light text-gray-700"
+              >
+                Vehículo blindado
+              </label>
+              <input
+                type="checkbox"
+                checked={selectedMaintenance}
+                id="homeMaintenance"
+                name="homeMaintenance"
+                value="homeMaintenance"
+                onChange={(e) => setSelectedMaintenance(!selectedMaintenance)}
+                className="h-4 border-gray-300  text-main focus:ring-main rounded-full"
+              />
+            </div>
+            <MaintenanceIcon />
+          </div>
+        </div>
+
+        <div className="col-span-1 md:col-span-4 lg:col-span-2">
           <label htmlFor="saving_plan_order" className="sr-only">
             Transmisión
           </label>
@@ -390,7 +413,7 @@ export default function FiltersSection({ brands, years, buttonTitle }) {
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-4 lg:col-span-2">
+        {/* <div className="col-span-1 md:col-span-4 lg:col-span-2">
           <label htmlFor="color" className="sr-only">
             Color
           </label>
@@ -419,7 +442,7 @@ export default function FiltersSection({ brands, years, buttonTitle }) {
             </select>
             <BrandIcon />
           </div>
-        </div>
+        </div> */}
 
         <div className="col-span-1 md:col-span-4 lg:col-span-2">
           <label htmlFor="license_plate" className="sr-only">
@@ -783,22 +806,13 @@ function KmIcon() {
 
 function MaintenanceIcon() {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
+    <svg fill="#F54927" xmlns="http://www.w3.org/2000/svg"
       fillRule="evenodd"
       strokeLinejoin="round"
       strokeMiterlimit="2"
       clipRule="evenodd"
-      viewBox="0 0 113 225"
-      className="w-2 absolute ml-4 mt-3 z-10"
-    >
-      <path
-        fill="#E53D30"
-        fillRule="nonzero"
-        d="M0-16.943a1.804 1.804 0 011.807-1.791c.993.004 1.793.81 1.789 1.804a1.796 1.796 0 01-1.802 1.792A1.806 1.806 0 010-16.943m4.289-4.942a6.725 6.725 0 00-6.869 5.462c-.383 1.972.045 3.793 1.271 5.39C-.26-9.666 1.103-8.842 2.736-8.511c-.011.07-.018.142-.018.215V3.692a1.38 1.38 0 002.759 0V-8.296c0-.074-.008-.146-.019-.217 3.443-.741 5.619-3.966 5.342-7.192a6.772 6.772 0 00-6.511-6.18"
-        transform="translate(-10453.8 -5172.58) scale(8.33333) translate(1257.17 642.6)"
-      ></path>
-    </svg>
+      viewBox="0 0 25 25"
+      className="w-4 absolute ml-3 mt-3 z-10" ><path d="M19.63,3.65a1,1,0,0,0-.84-.2,8,8,0,0,1-6.22-1.27,1,1,0,0,0-1.14,0A8,8,0,0,1,5.21,3.45a1,1,0,0,0-.84.2A1,1,0,0,0,4,4.43v7.45a9,9,0,0,0,3.77,7.33l3.65,2.6a1,1,0,0,0,1.16,0l3.65-2.6A9,9,0,0,0,20,11.88V4.43A1,1,0,0,0,19.63,3.65ZM18,11.88a7,7,0,0,1-2.93,5.7L12,19.77,8.93,17.58A7,7,0,0,1,6,11.88V5.58a10,10,0,0,0,6-1.39,10,10,0,0,0,6,1.39Z"/></svg>
   );
 }
 
