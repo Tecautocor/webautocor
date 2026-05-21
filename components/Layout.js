@@ -30,26 +30,7 @@ export const metadata = {
 
 export default function Layout({ children, selected }) {
   return (
-    <html lang="es">
-      <head>
-        {/* Cargar la fuente Sansation desde local */}
-        <style>
-          {`
-            @font-face {
-              font-family: 'Sansation';
-              src: url('/fonts/Sansation-Regular.ttf') format('truetype');
-              font-weight: normal;
-              font-style: normal;
-            }
-            
-            body {
-              font-family: 'Sansation', sans-serif;
-            }
-          `}
-        </style>
-      </head>
-
-      {/* Script para Hotjar */}
+    <>
       <Script
         id="tag-hj"
         dangerouslySetInnerHTML={{
@@ -63,8 +44,6 @@ export default function Layout({ children, selected }) {
           })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');`,
         }}
       />
-
-      {/* Script para Google Analytics */}
       <Script
         id="tag-gt"
         dangerouslySetInnerHTML={{
@@ -79,8 +58,6 @@ export default function Layout({ children, selected }) {
         async
         src="https://www.googletagmanager.com/gtag/js?id=G-V76NTXMWDS"
       />
-
-      {/* Script para Meta Pixel */}
       <Script
         id="tag-meta"
         dangerouslySetInnerHTML={{
@@ -96,8 +73,6 @@ export default function Layout({ children, selected }) {
           fbq('track', 'PageView');`,
         }}
       />
-
-      {/* Script para TikTok Pixel */}
       <Script
         id="tag-tiktok"
         dangerouslySetInnerHTML={{
@@ -108,12 +83,10 @@ export default function Layout({ children, selected }) {
           }(window, document, 'ttq');`,
         }}
       />
-      <body>
-        <Header selected={selected} />
-        {children}
-        <Footer />
-        <WhatsAppButton />
-      </body>
-    </html>
+      <Header selected={selected} />
+      {children}
+      <Footer />
+      <WhatsAppButton />
+    </>
   );
 }
