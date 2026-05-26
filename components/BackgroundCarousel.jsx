@@ -41,7 +41,7 @@ export default function BackgroundCarousel() {
 
         {/* Overlay clicable limitado al carrusel */}
         <a
-          href="https://walink.co/symv1w"
+          href="https://walink.co/l2ew6j"
           target="_blank"
           rel="noopener noreferrer"
           className="absolute top-0 left-0 w-full h-full z-10"
