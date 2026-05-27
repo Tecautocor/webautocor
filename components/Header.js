@@ -45,15 +45,15 @@ export default function Header({ selected }) {
             <Bars3Icon className="h-6 w-6" aria-hidden="true" />
           </button>
         </div>
-        <div className="hidden lg:flex lg:gap-x-12">
+        <div className="hidden lg:flex lg:gap-x-4 xl:gap-x-7 items-center">
           {navigation.map((item) => (
             <Link
               key={item.name}
               href={item.href}
               className={
                 selected === item.slug
-                  ? "text-main hover:text-[#939393] underline font-light"
-                  : "text-[#939393] hover:text-main hover:underline font-light"
+                  ? "text-main hover:text-[#939393] underline font-light text-xs xl:text-sm whitespace-nowrap"
+                  : "text-[#939393] hover:text-main hover:underline font-light text-xs xl:text-sm whitespace-nowrap"
               }
             >
               {item.name}

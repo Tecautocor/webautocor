@@ -178,6 +178,28 @@ export default function ProteccionDeDatos() {
           </div>
         </Acordeon>
       </div>
+
+      {/* AVISO DE PRIVACIDAD */}
+      <div className="max-w-5xl mx-auto px-6 pb-14">
+        <div className="border-l-4 border-main bg-gray-50 rounded-r-2xl px-6 py-5">
+          <h3 className="font-semibold text-[#3F3F3F] text-sm uppercase tracking-wide mb-2">
+            Aviso de Privacidad — Página Web
+          </h3>
+          <p className="text-gray-600 text-sm leading-relaxed">
+            AUTOCOR tratará los datos personales ingresados con la finalidad de
+            atender su consulta y brindar información sobre nuestros productos.
+            Los datos serán tratados conforme a la LOPDP. Usted podrá ejercer
+            sus derechos escribiendo al correo:{" "}
+            <a
+              href="mailto:datospersonales@autocor.com.ec"
+              className="text-main underline hover:text-red-700"
+            >
+              datospersonales@autocor.com.ec
+            </a>
+            .
+          </p>
+        </div>
+      </div>
     </Layout>
   );
 }

@@ -46,6 +46,7 @@ export default function FormBudget({ time, initialPayment, monthlyPayment }) {
             phone: "",
             email: "",
             city: "",
+            aceptaPolitica: false,
             autorizaDatos: false,
           }}
           validationSchema={BudgetContactSchema}
@@ -166,17 +167,17 @@ export default function FormBudget({ time, initialPayment, monthlyPayment }) {
               </div>
             </div>
 
-            {/* Checkbox autorización datos */}
-            <div>
+            {/* Checkboxes consentimiento */}
+            <div className="flex flex-col gap-3">
               <label className="flex items-start gap-3 cursor-pointer">
                 <Field
                   type="checkbox"
-                  name="autorizaDatos"
-                  id="autorizaDatos"
+                  name="aceptaPolitica"
+                  id="aceptaPolitica"
                   className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 accent-main cursor-pointer"
                 />
                 <span className="text-xs text-gray-300 leading-relaxed">
-                  Autorizo el tratamiento de mis datos personales conforme a la{" "}
+                  Declaro que he leído y acepto la{" "}
                   <Link
                     href="/proteccion-de-datos"
                     target="_blank"
@@ -185,6 +186,24 @@ export default function FormBudget({ time, initialPayment, monthlyPayment }) {
                     Política de Protección de Datos
                   </Link>{" "}
                   de AUTOCOR
+                </span>
+              </label>
+              <ErrorMessage name="aceptaPolitica">
+                {(msg) => (
+                  <div className="mt-1 px-1 text-xs text-red-300">{msg}</div>
+                )}
+              </ErrorMessage>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <Field
+                  type="checkbox"
+                  name="autorizaDatos"
+                  id="autorizaDatos"
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 accent-main cursor-pointer"
+                />
+                <span className="text-xs text-gray-300 leading-relaxed">
+                  Autorizo que se traten mis datos personales para enviarme
+                  información comercial y/o sobre servicios de AUTOCOR
                 </span>
               </label>
               <ErrorMessage name="autorizaDatos">

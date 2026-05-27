@@ -8,7 +8,7 @@ export const config = {
 
 async function handler(req, res) {
   if (req.method === "POST") {
-    const { name, lastname, phone, city, email, model, amount, brand, year, autorizaDatos } =
+    const { name, lastname, phone, city, email, model, amount, brand, year, aceptaPolitica, autorizaDatos } =
       req.body;
     try {
       const response = await axios({
@@ -26,7 +26,7 @@ async function handler(req, res) {
           pilot_phone: phone,
           pilot_city: city,
           pilot_car_modelo: model,
-          pilot_notifications_opt_in_consent_flag: autorizaDatos ? 1 : 0,
+          pilot_notifications_opt_in_consent_flag: aceptaPolitica ? 1 : 0,
           pilot_publicity_opt_in_consent_flag: autorizaDatos ? 1 : 0,
           pilot_notes:
             "Cantidad que deseas obtener por tu vehículo: USD " +
