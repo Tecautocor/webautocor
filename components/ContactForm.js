@@ -73,6 +73,7 @@ export default function Form() {
                     phone: "",
                     email: "",
                     city: "",
+                    aceptaPolitica: false,
                     autorizaDatos: false,
                   }}
                   validationSchema={HomeContactSchema}
@@ -201,17 +202,44 @@ export default function Form() {
                       </div>
                     </div>
 
-                    {/* Checkbox autorización datos */}
-                    <div className="sm:col-span-2">
+                    {/* Aviso de privacidad completo */}
+                    <div className="sm:col-span-2 border-l-2 border-white/30 pl-4 py-1">
+                      <p className="text-xs text-white/70 leading-relaxed">
+                        <span className="font-semibold text-white/90">Aviso de Privacidad —</span>{" "}
+                        AUTOCOR tratará los datos personales ingresados con la
+                        finalidad de atender su consulta y brindar información
+                        sobre nuestros productos. Los datos serán tratados
+                        conforme a la LOPDP. Usted podrá ejercer sus derechos
+                        escribiendo al correo:{" "}
+                        <a
+                          href="mailto:datospersonales@autocor.com.ec"
+                          className="text-white underline"
+                        >
+                          datospersonales@autocor.com.ec
+                        </a>
+                        . Para más información consulte nuestra{" "}
+                        <Link
+                          href="/proteccion-de-datos"
+                          target="_blank"
+                          className="text-white underline hover:text-gray-200"
+                        >
+                          Política de Protección de Datos Personales
+                        </Link>
+                        .
+                      </p>
+                    </div>
+
+                    {/* Checkboxes consentimiento */}
+                    <div className="sm:col-span-2 flex flex-col gap-3">
                       <label className="flex items-start gap-3 cursor-pointer">
                         <Field
                           type="checkbox"
-                          name="autorizaDatos"
-                          id="autorizaDatos"
+                          name="aceptaPolitica"
+                          id="aceptaPolitica"
                           className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 accent-gray-600 cursor-pointer"
                         />
                         <span className="text-xs text-white/80 leading-relaxed">
-                          Autorizo el tratamiento de mis datos personales conforme a la{" "}
+                          Declaro que he leído y acepto la{" "}
                           <Link
                             href="/proteccion-de-datos"
                             target="_blank"
@@ -220,6 +248,25 @@ export default function Form() {
                             Política de Protección de Datos
                           </Link>{" "}
                           de AUTOCOR
+                        </span>
+                      </label>
+                      <ErrorMessage name="aceptaPolitica">
+                        {(msg) => (
+                          <div className="mt-1 px-1 text-xs text-white font-semibold">{msg}</div>
+                        )}
+                      </ErrorMessage>
+
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <Field
+                          type="checkbox"
+                          name="autorizaDatos"
+                          id="autorizaDatos"
+                          className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 accent-gray-600 cursor-pointer"
+                        />
+                        <span className="text-xs text-white/80 leading-relaxed">
+                          Autorizo que se traten mis datos personales para
+                          enviarme información comercial y/o sobre servicios de
+                          AUTOCOR
                         </span>
                       </label>
                       <ErrorMessage name="autorizaDatos">
