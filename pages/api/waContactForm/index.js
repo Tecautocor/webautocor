@@ -18,6 +18,7 @@ async function handler(req, res) {
       time,
       initialPayment,
       monthlyPayment,
+      autorizaDatos,
     } = req.body;
     try {
       const response = await axios({
@@ -34,6 +35,8 @@ async function handler(req, res) {
           pilot_email: email,
           pilot_phone: phone,
           pilot_city: city,
+          pilot_notifications_opt_in_consent_flag: autorizaDatos ? 1 : 0,
+          pilot_publicity_opt_in_consent_flag: autorizaDatos ? 1 : 0,
           pilot_notes:
             "Entrada: USD " +
             initialPayment +

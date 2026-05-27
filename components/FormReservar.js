@@ -4,6 +4,7 @@ import { BudgetContactSchema } from "../lib/models";
 import Spinner from "./Spinner";
 import { useState } from "react";
 import { useRouter } from "next/router";
+import Link from "next/link";
 
 export default function FormReservar({
   time,
@@ -55,6 +56,7 @@ export default function FormReservar({
             id: id,
             initialPayment: initialPayment,
             monthlyPayment: monthlyPayment,
+            autorizaDatos: false,
           }}
           validationSchema={BudgetContactSchema}
           onSubmit={(values, { resetForm }) => {
@@ -168,6 +170,34 @@ export default function FormReservar({
                   )}
                 </ErrorMessage>
               </div>
+            </div>
+
+            {/* Checkbox autorización datos */}
+            <div>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <Field
+                  type="checkbox"
+                  name="autorizaDatos"
+                  id="autorizaDatos"
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 accent-main cursor-pointer"
+                />
+                <span className="text-xs text-gray-500 leading-relaxed">
+                  Autorizo el tratamiento de mis datos personales conforme a la{" "}
+                  <Link
+                    href="/proteccion-de-datos"
+                    target="_blank"
+                    className="text-main underline hover:text-red-700"
+                  >
+                    Política de Protección de Datos
+                  </Link>{" "}
+                  de AUTOCOR
+                </span>
+              </label>
+              <ErrorMessage name="autorizaDatos">
+                {(msg) => (
+                  <div className="mt-1 px-1 text-xs text-main">{msg}</div>
+                )}
+              </ErrorMessage>
             </div>
 
             <div className="flex justify-center">

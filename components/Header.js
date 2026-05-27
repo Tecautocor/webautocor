@@ -19,6 +19,7 @@ const navigation = [
     slug: "work",
   },
   { name: "Contáctanos", href: "/contactanos", slug: "contact" },
+  { name: "Datos Personales", href: "/proteccion-de-datos", slug: "data" },
 ];
 
 export default function Header({ selected }) {

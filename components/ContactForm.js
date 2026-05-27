@@ -1,5 +1,6 @@
 import axios from "axios";
 import Image from "next/image";
+import Link from "next/link";
 import { IconArrow } from "../components/Shared";
 import { ErrorMessage, Field, Form as FormikForm, Formik } from "formik";
 import { HomeContactSchema } from "../lib/models";
@@ -72,6 +73,7 @@ export default function Form() {
                     phone: "",
                     email: "",
                     city: "",
+                    autorizaDatos: false,
                   }}
                   validationSchema={HomeContactSchema}
                   onSubmit={(values, { resetForm }) => {
@@ -197,6 +199,34 @@ export default function Form() {
                           )}
                         </ErrorMessage>
                       </div>
+                    </div>
+
+                    {/* Checkbox autorización datos */}
+                    <div className="sm:col-span-2">
+                      <label className="flex items-start gap-3 cursor-pointer">
+                        <Field
+                          type="checkbox"
+                          name="autorizaDatos"
+                          id="autorizaDatos"
+                          className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 accent-gray-600 cursor-pointer"
+                        />
+                        <span className="text-xs text-white/80 leading-relaxed">
+                          Autorizo el tratamiento de mis datos personales conforme a la{" "}
+                          <Link
+                            href="/proteccion-de-datos"
+                            target="_blank"
+                            className="text-white underline hover:text-gray-200"
+                          >
+                            Política de Protección de Datos
+                          </Link>{" "}
+                          de AUTOCOR
+                        </span>
+                      </label>
+                      <ErrorMessage name="autorizaDatos">
+                        {(msg) => (
+                          <div className="mt-1 px-1 text-xs text-white font-semibold">{msg}</div>
+                        )}
+                      </ErrorMessage>
                     </div>
 
                     <div className="sm:col-span-2 flex justify-center">
