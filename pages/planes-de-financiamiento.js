@@ -321,6 +321,8 @@ export default function Financing() {
           <Image
   src="/agile-image.png"
   alt="Imagen de proceso ágil"
+  width={600}
+  height={400}
   className="move-right w-full h-auto px-4 py-2"
 />
 
