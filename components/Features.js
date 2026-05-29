@@ -2,7 +2,7 @@ export default function Features({ info }) {
   return (
     <div className="rounded-lg shadow-xl bg-white py-16 px-12 lg:px-12 mt-12 mx-6">
       <div className="flex  flex-col md:flex-row gap-2 lg:gap-12 justify-center pb-12 -mt-20 text-white font-light">
-        <div className="flex justify-center">
+        {/* <div className="flex justify-center">
           <div className="bg-main px-5 py-3 rounded-lg text-center flex gap-2">
             <StarIconTitle />
             <p>Un solo dueño</p>
@@ -13,7 +13,7 @@ export default function Features({ info }) {
             <MaintenanceIconTitle />
             <p>Mantenimiento en casa</p>
           </div>
-        </div>
+        </div> */}
         {Number(info.odometer) <= 10000 && (
           <div className="flex justify-center">
             <div className="bg-main px-5 py-3 rounded-lg text-center flex gap-2">
