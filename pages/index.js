@@ -99,7 +99,7 @@ export default function Home() {
               </p>
             </div>
           )}
-          {!isLoadingFeatured && !isErrorFeatured && dataFeatured && (
+          {!isLoadingFeatured && !isErrorFeatured && dataFeatured?.result?.entitydata && (
             <List list={getMultipleRandom(dataFeatured.result.entitydata, 4)} />
           )}
           <div className="flex justify-center">
@@ -143,7 +143,7 @@ export default function Home() {
               </p>
             </div>
           )}
-          {!isLoading && !isError && data && (
+          {!isLoading && !isError && data?.result?.entitydata && (
             <List list={data.result.entitydata} />
           )}
           <div className="flex justify-center">
