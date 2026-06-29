@@ -10,7 +10,7 @@ const agencias = [
     address: "Av. 6 de diciembre SN N61 y Santa Lucia",
     time: "Lunes a Viernes de 08:00 a 18:00, Sábado de 09:00 a 17:00 y Domingo de 10:00 a 14:00",
     location: { latitude: -0.12705068988192195, longitude: -78.47793321363118 },
-    phone: "+593 98 300 4214"
+    phone: "+593 99 037 4297"
   },
   {
     id: 2,
@@ -19,7 +19,7 @@ const agencias = [
     address: "Av. Oswaldo Guayasamín",
     time: "Lunes a Viernes de 9:00 a 18:30; Sábado de 09:00 a 17:00 y Domingo de 10:00 a 14:00",
     location: { latitude: -0.20599, longitude: -78.43362 },
-    phone: "+593 96 308 7046"
+    phone: "+593 99 043 6699"
   },
   {
     id: 3,
@@ -38,7 +38,7 @@ const agencias = [
       "Av. Eloy Alfaro E14 - 65 y Camilo Gallegos, esquina (una cuadra antes de la Av. De los Granados).",
     time: "Lunes a Viernes de 08:00 a 19:00, Sábado de 09:00 a 17:00 y Domingo de 10:00 a 14:00.",
     location: { latitude: -0.16664207649076915, longitude: -78.46845050013835 },
-    phone: "+593 98 300 4214"
+    phone: "+593 99 037 4297"
   },
   {
     id: 5,
@@ -48,7 +48,7 @@ const agencias = [
       "Av. Francisco de Orellana E4-328 y Enrique Gangotena. Diagonal al Hotel Marriott. Quito, Pichincha",
     time: "Lunes a Viernes de 08:00 a 19:00, Sábado de 09:00 a 17:00 y Domingo de 10:00 a 14:00",
     location: { latitude: -0.19742284789267078, longitude: -78.49054922297624 },
-    phone: "+593 96 308 7046"
+    phone: "+593 99 043 6699"
   },
   {
     id: 6,
@@ -57,7 +57,7 @@ const agencias = [
     address: "Av. La Prensa N46-15 y, Zamora, Frente al Tecnologico Cordillera",
     time: "Lunes a Viernes de 08:00 a 18:30, Sábado de 09:00 a 17:00 y Domingo de 10:00 - 14:00",
     location: { latitude: -0.15546, longitude: -78.48885 },
-    phone: "+593 99 820 8817"
+    phone: "+593 99 333 9571"
   },
   {
     id: 7,
@@ -75,7 +75,7 @@ const agencias = [
     address: "Av. Pedro Vicente Maldonado",
     time: "Lunes a viernes de 08:00 - 18:00, Sábados de 09:00 - 17:00 y Domingo de 10:00 - 14:00",
     location: { latitude: -0.25916, longitude: -78.52282 },
-    phone: "+593 99 820 8817"
+    phone: "+593 99 333 9571"
   },
   {
     id: 8,
