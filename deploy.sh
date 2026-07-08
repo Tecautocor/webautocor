@@ -8,8 +8,8 @@ echo '📦 Instalando dependencias...'
 npm install --no-audit --no-fund
 echo '📦 Compilando...'
 npm run build
-echo '🔄 Recargando servidor sin downtime...'
-pm2 reload autocor
+echo '🔄 Reiniciando servidor...'
+pm2 restart autocor
 echo '⏳ Calentando caché...'
 sleep 5
 curl -s -X POST http://localhost:3000/api/token > /dev/null
