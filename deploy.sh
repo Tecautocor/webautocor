@@ -4,8 +4,8 @@ echo '🚀 Iniciando deploy...'
 cd /home/Autocor
 echo '📥 Descargando cambios de GitHub...'
 git pull origin main
-echo '🧹 Limpiando build anterior...'
-find /home/Autocor/.next -type f -delete 2>/dev/null; find /home/Autocor/.next -type d -empty -delete 2>/dev/null; true
+echo '📦 Instalando dependencias...'
+npm install --no-audit --no-fund
 echo '📦 Compilando...'
 npm run build
 echo '🔄 Recargando servidor sin downtime...'
