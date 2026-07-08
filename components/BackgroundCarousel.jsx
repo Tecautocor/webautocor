@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 
-const images = ["/background1.jpg", "/background2.jpg", "/background3.jpg"];
+const images = [
+  { src: "/background-liquidacion.jpg", href: "/liquidacion", external: false },
+  { src: "/background1.jpg", href: "https://walink.co/l2ew6j", external: true },
+  { src: "/background3.jpg", href: "https://walink.co/l2ew6j", external: true },
+];
 
 export default function BackgroundCarousel() {
   const [current, setCurrent] = useState(0);
@@ -29,7 +33,7 @@ export default function BackgroundCarousel() {
             style={{ width: "100%", height: "100%" }}
           >
             <Image
-              src={img}
+              src={img.src}
               alt={`Background ${index + 1}`}
               fill
               style={{ objectFit: "contain", objectPosition: "center" }}
@@ -39,11 +43,11 @@ export default function BackgroundCarousel() {
           </div>
         ))}
 
-        {/* Overlay clicable limitado al carrusel */}
+        {/* Overlay clicable limitado al carrusel (destino según la imagen visible) */}
         <a
-          href="https://walink.co/l2ew6j"
-          target="_blank"
-          rel="noopener noreferrer"
+          href={images[current].href}
+          target={images[current].external ? "_blank" : undefined}
+          rel={images[current].external ? "noopener noreferrer" : undefined}
           className="absolute top-0 left-0 w-full h-full z-10"
         />
       </div>

@@ -127,11 +127,11 @@ export function IconArrow({ className }) {
   );
 }
 
-export function SectionText({ title, subtitle }) {
+export function SectionText({ title, subtitle, boldTitle = false }) {
   return (
     <div className="pt-6 pb-3 px-6 lg:px-8">
       <div className="mx-auto max-w-4xl text-center">
-        <h2 className="text-2xl font-light uppercase tracking-normal text-main">
+        <h2 className={`text-2xl uppercase tracking-normal text-main ${boldTitle ? "font-bold" : "font-light"}`}>
           {title}
         </h2>
         <p className="text-3xl uppercase font-bold leading-8 text-gray-600 font-poppins">

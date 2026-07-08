@@ -28,199 +28,81 @@ async function handler(req, res) {
       color,
       license_plate,
       invoice,
+      minDays,
+      sort,
     } = req.query;
 
     let page = req.query.page || 1;
 
-    let where = {};
+    // Ruta liquidación: filtra por placas aprobadas en tabla LiquidacionVehicle,
+    // ordenadas de mayor a menor días en stock
+    if (sort === "days_desc") {
+      try {
+        const limitInt = perPage;
+        const offsetInt = (parseInt(page) - 1) * perPage;
 
-    if (
-      priceFrom !== "" &&
-      priceFrom !== undefined &&
-      (priceTo === "" || priceTo === undefined)
-    ) {
-      where.prices = {
-        gte: parseInt(priceFrom),
-      };
-    }
-    if (
-      priceTo !== "" &&
-      priceTo !== undefined &&
-      (priceFrom === "" || priceFrom === undefined)
-    ) {
-      where.prices = {
-        lte: parseInt(priceTo),
-      };
-    }
+        const countResult = await db.$queryRaw`
+          SELECT COUNT(*) as cnt
+          FROM Vehicle v
+          INNER JOIN LiquidacionVehicle lv ON v.license_plate = lv.license_plate
+        `;
+        const totalCount = Number(countResult[0].cnt);
 
-    if (
-      priceFrom !== "" &&
-      priceFrom !== undefined &&
-      priceTo !== "" &&
-      priceTo !== undefined &&
-      (yearFrom === "" ||
-        yearFrom === undefined ||
-        yearTo === "" ||
-        yearTo === undefined)
-    ) {
-      where = {
-        AND: [
-          {
-            prices: { gte: parseInt(priceFrom) },
+        const response = await db.$queryRaw`
+          SELECT v.*, lv.stock_value AS stock_value, lv.bono AS bono
+          FROM Vehicle v
+          INNER JOIN LiquidacionVehicle lv ON v.license_plate = lv.license_plate
+          ORDER BY CAST(v.days_in_stock AS UNSIGNED) DESC
+          LIMIT ${limitInt} OFFSET ${offsetInt}
+        `;
+
+        return res.status(200).json({
+          aditional_data: {
+            page: parseInt(page),
+            page_count: Math.ceil(totalCount / limitInt),
+            rows_count: totalCount,
+            rows_per_page: limitInt,
+            rows_in_page: response.length,
+            rows_remaining: totalCount - limitInt * parseInt(page),
           },
-          {
-            prices: { lte: parseInt(priceTo) },
-          },
-        ],
-      };
+          entitydata: response,
+        });
+      } catch (err) {
+        console.log(err);
+        return res.status(404).end();
+      }
     }
 
-    if (
-      yearFrom !== "" &&
-      yearFrom !== undefined &&
-      (yearTo === "" || yearTo === undefined)
-    ) {
-      where.year = {
-        gte: parseInt(yearFrom),
-      };
-    }
-    if (
-      yearTo !== "" &&
-      yearTo !== undefined &&
-      (yearFrom === "" || yearFrom === undefined)
-    ) {
-      where.year = {
-        lte: parseInt(yearTo),
-      };
+    const conditions = [];
+
+    if (minDays) {
+      const rows = await db.$queryRaw`
+        SELECT id_record FROM Vehicle
+        WHERE days_in_stock REGEXP '^[0-9]+$'
+          AND CAST(days_in_stock AS UNSIGNED) >= ${parseInt(minDays)}
+      `;
+      const ids = rows.map((r) => r.id_record);
+      conditions.push({ id_record: { in: ids } });
     }
 
-    if (
-      yearFrom !== "" &&
-      yearFrom !== undefined &&
-      yearTo !== "" &&
-      yearTo !== undefined &&
-      (priceFrom === "" ||
-        priceFrom === undefined ||
-        priceTo === "" ||
-        priceTo === undefined)
-    ) {
-      where = {
-        AND: [
-          {
-            prices: { gte: parseInt(yearFrom) },
-          },
-          {
-            prices: { lte: parseInt(yearTo) },
-          },
-        ],
-      };
-    }
+    if (priceFrom) conditions.push({ prices: { gte: parseInt(priceFrom) } });
+    if (priceTo) conditions.push({ prices: { lte: parseInt(priceTo) } });
+    if (yearFrom) conditions.push({ year: { gte: parseInt(yearFrom) } });
+    if (yearTo) conditions.push({ year: { lte: parseInt(yearTo) } });
+    if (agency) conditions.push({ location: { equals: agency } });
+    if (fuel_name) conditions.push({ fuel_name: { equals: fuel_name } });
+    if (color) conditions.push({ color: { equals: color } });
+    if (license_plate) conditions.push({ license_plate: { endsWith: license_plate.toString() } });
+    if (saving_plan_order) conditions.push({ saving_plan_order: { equals: saving_plan_order } });
+    if (brand) conditions.push({ brand: { equals: brand } });
+    if (model) conditions.push({ model: { equals: model } });
+    if (owner) conditions.push({ owner: { equals: 1 } });
+    if (homeMaintenance) conditions.push({ home: { equals: 1 } });
+    if (kilometers) conditions.push({ odometer: { lte: 10000 } });
+    if (type) conditions.push({ type: { equals: type } });
+    if (invoice) conditions.push({ factory_status: { equals: 'SI' } });
 
-    if (
-      yearFrom !== "" &&
-      yearFrom !== undefined &&
-      yearTo !== "" &&
-      yearTo !== undefined &&
-      priceFrom !== "" &&
-      priceFrom !== undefined &&
-      priceTo !== "" &&
-      priceTo !== undefined
-    ) {
-      where = {
-        AND: [
-          {
-            prices: { gte: parseInt(priceFrom) },
-          },
-          {
-            prices: { lte: parseInt(priceTo) },
-          },
-          {
-            year: { gte: parseInt(yearFrom) },
-          },
-          {
-            year: { lte: parseInt(yearTo) },
-          },
-        ],
-      };
-    }
-
-    if (agency !== "" && agency !== undefined) {
-      where.location = {
-        equals: agency,
-      };
-    }
-
-    if (fuel_name !== "" && fuel_name !== undefined) {
-      where.fuel_name = {
-        equals: fuel_name,
-      };
-    }
-
-    if (color !== "" && color !== undefined) {
-      where.color = {
-        equals: color,
-      };
-    }
-
-    if (license_plate !== "" && license_plate !== undefined) {
-      where.license_plate = {
-        endsWith: license_plate.toString(),
-      };
-    }
-
-    if (saving_plan_order !== "" && saving_plan_order !== undefined) {
-      where.saving_plan_order = {
-        equals: saving_plan_order,
-      };
-    }
-
-    if (brand !== "" && brand !== undefined) {
-      where.brand = {
-        equals: brand,
-      };
-    }
-
-    if (model !== "" && model !== undefined) {
-      where.model = {
-        equals: model,
-      };
-    }
-
-    if (owner !== "" && owner !== undefined) {
-      where.owner = {
-        equals: 1,
-      };
-    }
-
-    if (homeMaintenance !== "" && homeMaintenance !== undefined) {
-      where.home = {
-        equals: 1,
-      };
-    }
-
-    if (homeMaintenance !== "" && homeMaintenance !== undefined) {
-      where.home = {
-        equals: 1,
-      };
-    }
-
-    if (kilometers !== "" && kilometers !== undefined) {
-      where.odometer = {
-        lte: 10000,
-      };
-    }
-
-    if (type !== "" && type !== undefined) {
-      where.type = {
-        equals: type,
-      };
-    }
-
-    if(invoice !== "" && invoice !== undefined) {
-      where.factory_status = {
-        equals: 'SI',
-      };
-    }
+    const where = conditions.length > 0 ? { AND: conditions } : {};
 
     try {
       const responseCount = await db.vehicle.count({ where: where });

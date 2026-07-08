@@ -56,7 +56,7 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-export default function FiltersSection({ brands, years, buttonTitle }) {
+export default function FiltersSection({ brands, years, buttonTitle, action = "/vehiculos" }) {
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedAgency, setSelectedAgency] = useState("");
@@ -174,7 +174,7 @@ export default function FiltersSection({ brands, years, buttonTitle }) {
     );
 
   return (
-    <form action="\vehiculos" method="GET" className="mx-auto w-full">
+    <form action={action} method="GET" className="mx-auto w-full">
       <div className="mx-auto w-full max-w-6xl grid gap-x-2 gap-y-2 grid-cols-1 md:grid-cols-4 lg:grid-cols-8 pt-4 pb-6">
         <div className="col-span-1 md:col-span-1 lg:col-span-2">
           <div className="flex bg-white">

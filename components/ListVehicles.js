@@ -2,7 +2,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { calcCuota48Meses } from "../lib/utils";
 
-export default function List({ list }) {
+function precioAntes(price) {
+  const inflado = price * 1.05;
+  if (inflado < 1000)   return Math.ceil(inflado / 100) * 100 - 10;
+  if (inflado < 100000) return Math.ceil(inflado / 1000) * 1000 - 100;
+  return Math.ceil(inflado / 10000) * 10000 - 1000;
+}
+
+export default function List({ list, liquidacion = false }) {
   return (
     <div className="bg-white py-4">
       <div className="relative overflow-hidden">
@@ -51,26 +58,63 @@ export default function List({ list }) {
                       </p>
                     </div>
 
-                    <div className="flex justify-between py-2 items-center mb-2">
-                      <div className="text-main text-1xl font-bold flex justify-center mx-2">
-                        ${" "}
-                        {new Intl.NumberFormat("es-EC", {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        }).format(Number(listItem.prices | 0))}
+                    {liquidacion ? (() => {
+                      const hasStockValue = listItem.stock_value !== null && listItem.stock_value !== undefined;
+                      const stockValue = hasStockValue ? Number(listItem.stock_value) : precioAntes(Number(listItem.prices | 0));
+                      const bono = Number(listItem.bono | 0);
+                      const precioFinal = hasStockValue ? stockValue - bono : Number(listItem.prices | 0);
+
+                      return (
+                      <div className="flex flex-col py-2 mb-2 gap-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold bg-red-100 text-red-600 px-2 py-0.5 rounded uppercase tracking-wide">
+                            Antes
+                          </span>
+                          <span className="text-gray-400 text-sm line-through">
+                            ${" "}
+                            {new Intl.NumberFormat("es-EC", {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            }).format(stockValue)}
+                          </span>
+                        </div>
+                        <div className="text-2xl text-main font-bold">
+                          ${" "}
+                          {new Intl.NumberFormat("es-EC", {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          }).format(precioFinal)}
+                        </div>
+                        <div className="text-gray-500 text-sm font-light">
+                          ${" "}
+                          {new Intl.NumberFormat("es-EC", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }).format(calcCuota48Meses(precioFinal))}
+                          <span className="ml-1">/mes</span>
+                        </div>
                       </div>
-                      <div className="text-gray-200">|</div>
-                      <div className="text-gray-600 flex justify-center items-baseline font-light mx-2">
-                        ${" "}
-                        {new Intl.NumberFormat("es-EC", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }).format(
-                          calcCuota48Meses(Number(listItem.prices | 0))
-                        )}
-                        <span className="text-sm ml-1">/mes</span>
+                      );
+                    })() : (
+                      <div className="flex justify-between py-2 items-center mb-2">
+                        <div className="text-main text-1xl font-bold flex justify-center mx-2">
+                          ${" "}
+                          {new Intl.NumberFormat("es-EC", {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          }).format(Number(listItem.prices | 0))}
+                        </div>
+                        <div className="text-gray-200">|</div>
+                        <div className="text-gray-600 flex justify-center items-baseline font-light mx-2">
+                          ${" "}
+                          {new Intl.NumberFormat("es-EC", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          }).format(calcCuota48Meses(Number(listItem.prices | 0)))}
+                          <span className="text-sm ml-1">/mes</span>
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     <hr />
 

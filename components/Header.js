@@ -7,6 +7,7 @@ import Link from "next/link";
 const navigation = [
   { name: "Quiénes somos", href: "/quienes-somos", slug: "about" },
   { name: "Vehículos", href: "/vehiculos", slug: "vehicles" },
+  { name: "Liquidación", href: "/liquidacion", slug: "liquidacion" },
   { name: "Compramos tu auto", href: "/compramos-tu-auto", slug: "buy" },
   {
     name: "Planes de financiamiento",
@@ -21,6 +22,35 @@ const navigation = [
   { name: "Contáctanos", href: "/contactanos", slug: "contact" },
   { name: "Datos Personales", href: "/proteccion-de-datos", slug: "data" },
 ];
+
+function DescuentosSticker() {
+  return (
+    <span className="absolute left-1/2 top-full -translate-x-1/2 flex flex-col items-center select-none pointer-events-none">
+      <span className="w-px h-3 bg-gray-400/70" aria-hidden="true" />
+      <span className="hanging-tag relative bg-main text-white text-[7px] xl:text-[8px] font-bold uppercase leading-[1.1] text-center px-1.5 pt-2 pb-1 rounded-sm shadow-md">
+        <span className="absolute top-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white ring-1 ring-gray-300" />
+        Grandes
+        <br />
+        descuentos
+      </span>
+      <style jsx>{`
+        .hanging-tag {
+          transform-origin: top center;
+          animation: swing 2.6s ease-in-out infinite;
+        }
+        @keyframes swing {
+          0%,
+          100% {
+            transform: rotate(-4deg);
+          }
+          50% {
+            transform: rotate(4deg);
+          }
+        }
+      `}</style>
+    </span>
+  );
+}
 
 export default function Header({ selected }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -47,17 +77,19 @@ export default function Header({ selected }) {
         </div>
         <div className="hidden lg:flex lg:gap-x-4 xl:gap-x-7 items-center">
           {navigation.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={
-                selected === item.slug
-                  ? "text-main hover:text-[#939393] underline font-light text-xs xl:text-sm whitespace-nowrap"
-                  : "text-[#939393] hover:text-main hover:underline font-light text-xs xl:text-sm whitespace-nowrap"
-              }
-            >
-              {item.name}
-            </Link>
+            <div key={item.name} className="relative flex items-center">
+              <Link
+                href={item.href}
+                className={
+                  selected === item.slug
+                    ? "text-main hover:text-[#939393] underline font-light text-xs xl:text-sm whitespace-nowrap"
+                    : "text-[#939393] hover:text-main hover:underline font-light text-xs xl:text-sm whitespace-nowrap"
+                }
+              >
+                {item.name}
+              </Link>
+              {item.slug === "liquidacion" && <DescuentosSticker />}
+            </div>
           ))}
         </div>
       </nav>
@@ -86,13 +118,15 @@ export default function Header({ selected }) {
             <div className="-my-6 divide-y divide-gray-500/10">
               <div className="space-y-2 py-6">
                 {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="-mx-3 block rounded-lg py-2 px-3 leading-7 text-gray-900 hover:text-main hover:underline"
-                  >
-                    {item.name}
-                  </Link>
+                  <div key={item.name} className="relative flex items-center">
+                    <Link
+                      href={item.href}
+                      className="-mx-3 block rounded-lg py-2 px-3 leading-7 text-gray-900 hover:text-main hover:underline"
+                    >
+                      {item.name}
+                    </Link>
+                    {item.slug === "liquidacion" && <DescuentosSticker />}
+                  </div>
                 ))}
               </div>
             </div>

@@ -66,13 +66,12 @@ async function handler(req, res) {
         leftRemaining = response.data.result.aditional_data.rows_remaining;
         page++;
 
-        response.data.result.entitydata.forEach((item) =>
+        (response.data?.result?.entitydata || []).forEach((item) =>
           data.push({
             id: item.id,
             media:
-              item.media.length > 0
-                ? item.media.filter((photo) => photo.size === "desktop")[0]
-                    .full_path
+              item.media?.length > 0
+                ? (item.media.filter((photo) => photo.size === "desktop")[0]?.full_path ?? null)
                 : null,
             brand: item.brand,
             model: item.model,
@@ -90,8 +89,8 @@ async function handler(req, res) {
             color: item.color,
             accesories: item.accesories,
             license_plate: item.license_plate,
-            received_flag: item.received_flag.toString(),
-            days_in_stock:  item.days_in_stock.toString(),
+            received_flag: item.received_flag != null ? item.received_flag.toString() : '',
+            days_in_stock: item.days_in_stock != null ? item.days_in_stock.toString() : '',
             published_in_web: item.published_in_web,
             engine_number: item.engine_number,
             reserved_by_user_email: item.reservation.reserved_by_user?.name || '',

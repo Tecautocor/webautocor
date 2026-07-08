@@ -71,13 +71,12 @@ async function handler(req, res) {
         leftRemaining = response.data.result.aditional_data.rows_remaining;
         page++;
 
-        response.data.result.entitydata.forEach((item) =>
+        (response.data?.result?.entitydata || []).forEach((item) =>
           data.push({
             id: item.id,
             media:
-              item.media.length > 0
-                ? item.media.filter((photo) => photo.size === "desktop")[0]
-                    .full_path
+              item.media?.length > 0
+                ? (item.media.filter((photo) => photo.size === "desktop")[0]?.full_path ?? null)
                 : null,
             brand: item.brand,
             model: item.model,
