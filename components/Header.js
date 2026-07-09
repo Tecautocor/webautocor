@@ -118,7 +118,11 @@ export default function Header({ selected }) {
             <div className="-my-6 divide-y divide-gray-500/10">
               <div className="space-y-2 py-6">
                 {navigation.map((item) => (
-                  <div key={item.name} className="relative flex items-center">
+                  <div
+                    key={item.name}
+                    className="relative flex items-center w-fit"
+                    style={item.slug === "liquidacion" ? { marginBottom: "2.25rem" } : undefined}
+                  >
                     <Link
                       href={item.href}
                       className="-mx-3 block rounded-lg py-2 px-3 leading-7 text-gray-900 hover:text-main hover:underline"
