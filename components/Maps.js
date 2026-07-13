@@ -4,6 +4,8 @@ import "animate.css/animate.min.css";
 import { SectionText } from "../components/Shared";
 import Image from "next/image";
 
+const COMPRAS_PHONE = "+593 99 037 4297";
+
 export default function Maps({ agencias }) {
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
@@ -82,6 +84,17 @@ export default function Maps({ agencias }) {
                               className="underline hover:text-white cursor-pointer"
                             >
                               {position.phone}
+                            </a>
+                          </p>
+                          <p className="font-light">
+                            Compras:
+                            <a
+                              href={`https://wa.me/${COMPRAS_PHONE.replace(/[^0-9]/g, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline hover:text-white cursor-pointer"
+                            >
+                              {COMPRAS_PHONE}
                             </a>
                           </p>
                         </div>
