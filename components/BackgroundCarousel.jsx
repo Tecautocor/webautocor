@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 
 const images = [
-  { src: "/background-liquidacion.jpg", href: "/liquidacion", external: false },
   { src: "/background1.jpg", href: "https://walink.co/l2ew6j", external: true },
   { src: "/background3.jpg", href: "https://walink.co/l2ew6j", external: true },
 ];
