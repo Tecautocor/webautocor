@@ -41,7 +41,7 @@ const WhatsAppButton = () => {
     const message = `Hola, mi nombre es ${name}. me gustaría información de sus autos que vi en la página web!!`;
 
     // Redirigir a la URL de WhatsApp usando la URL específica
-    const url = `https://api.whatsapp.com/send/?phone=593987770028&text=${encodeURIComponent(message)}&type=phone_number&app_absent=0`;
+    const url = `https://api.whatsapp.com/send/?phone=593993339571&text=${encodeURIComponent(message)}&type=phone_number&app_absent=0`;
 
     // Abrir la URL de WhatsApp en una nueva pestaña
     window.open(url, '_blank');

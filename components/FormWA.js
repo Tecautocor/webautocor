@@ -28,7 +28,7 @@ export default function FormWA({ time, initialPayment, monthlyPayment, id }) {
       setIsSuccess(true);
       resetForm();
       router.push(
-        "https://api.whatsapp.com/send?phone=593999003301&amp;text=Hola%2C+estoy+interesado"
+        "https://api.whatsapp.com/send?phone=593993339571&amp;text=Hola%2C+estoy+interesado"
       );
     } catch (error) {
       setIsLoading(false);

@@ -275,7 +275,7 @@ export default function Details() {
 
                     <button
                       onClick={() => {
-                        const phoneNumber = "593998208817";
+                        const phoneNumber = "593993339571";
                         const currentUrl = window.location.href; // Obtiene la URL actual
                         const year = data.result.entitydata.year;
                         const brand = data.result.entitydata.brand;
