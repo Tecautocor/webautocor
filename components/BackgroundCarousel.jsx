@@ -5,8 +5,8 @@ import Image from "next/image";
 
 const images = [
   { src: "/background-liquidacion-julio.jpg", href: "/liquidacion", external: false },
-  { src: "/background1.jpg", href: "https://api.whatsapp.com/send?phone=593993339571&text=Hola%21%20Quiero%20comprar%20un%20seminuevo...", external: true },
-  { src: "/background3.jpg", href: "https://api.whatsapp.com/send?phone=593993339571&text=Hola%21%20Quiero%20comprar%20un%20seminuevo...", external: true },
+  { src: "/background1.jpg", href: "https://api.whatsapp.com/send?phone=593999634418&text=Hola%21%20Quiero%20comprar%20un%20seminuevo...", external: true },
+  { src: "/background3.jpg", href: "https://api.whatsapp.com/send?phone=593999634418&text=Hola%21%20Quiero%20comprar%20un%20seminuevo...", external: true },
 ];
 
 export default function BackgroundCarousel() {
