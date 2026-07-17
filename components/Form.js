@@ -5,6 +5,7 @@ import { BuyContactSchema } from "../lib/models";
 import Spinner from "./Spinner";
 import { useState } from "react";
 import Link from "next/link";
+import { trackConversion } from "../lib/analytics";
 
 export default function Form() {
   const [isLoading, setIsLoading] = useState(false);
@@ -26,6 +27,7 @@ export default function Form() {
       setIsLoading(false);
       setIsSuccess(true);
       resetForm();
+      trackConversion("form", "compramos_tu_auto");
     } catch (error) {
       setIsLoading(false);
       setIsError(true);

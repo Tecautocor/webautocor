@@ -5,6 +5,7 @@ import { ErrorMessage, Field, Form as FormikForm, Formik } from "formik";
 import { BudgetContactSchema } from "../lib/models";
 import Spinner from "./Spinner";
 import { useState } from "react";
+import { trackConversion } from "../lib/analytics";
 
 export default function FormBudget({ time, initialPayment, monthlyPayment }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -26,6 +27,7 @@ export default function FormBudget({ time, initialPayment, monthlyPayment }) {
       setIsLoading(false);
       setIsSuccess(true);
       resetForm();
+      trackConversion("form", "cotizador_budget");
     } catch (error) {
       setIsLoading(false);
       setIsError(true);

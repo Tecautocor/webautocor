@@ -5,6 +5,7 @@ import Spinner from "./Spinner";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import { trackConversion } from "../lib/analytics";
 
 export default function FormReservar({
   time,
@@ -32,6 +33,7 @@ export default function FormReservar({
       setIsLoading(false);
       setIsSuccess(true);
       resetForm();
+      trackConversion("form", "reservar_vehiculo");
     } catch (error) {
       setIsLoading(false);
       setIsError(true);

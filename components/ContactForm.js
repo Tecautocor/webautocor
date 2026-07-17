@@ -6,6 +6,7 @@ import { ErrorMessage, Field, Form as FormikForm, Formik } from "formik";
 import { HomeContactSchema } from "../lib/models";
 import Spinner from "./Spinner";
 import { useState } from "react";
+import { trackConversion } from "../lib/analytics";
 
 export default function Form() {
   const [isLoading, setIsLoading] = useState(false);
@@ -27,6 +28,7 @@ export default function Form() {
       setIsLoading(false);
       setIsSuccess(true);
       resetForm();
+      trackConversion("form", "contacto_home");
     } catch (error) {
       setIsLoading(false);
       setIsError(true);

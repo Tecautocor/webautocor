@@ -18,6 +18,7 @@ import {
 } from "../../lib/hooks";
 import { SectionText, Spinner, LinkButton } from "../../components/Shared";
 import { calcCuotaXMeses, calcCuota48Meses } from "../../lib/utils";
+import { trackConversion } from "../../lib/analytics";
 
 export default function Details() {
   const router = useRouter();
@@ -287,6 +288,7 @@ export default function Details() {
                         }).format(data.result.entitydata.prices[0]?.value || 0); // Asegúrate de que la propiedad exista
                         const message = `¡Hola Autocor!! \n\nMe interesa este auto:\n\nMarca:${brand}\nModelo: ${model}\nAño: ${year}\nPrecio: $${price}\nAgencia: ${agency}\n\n${currentUrl}`;
                         const whatsappUrl = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
+                        trackConversion("whatsapp", "agendar_detalle_vehiculo");
                         window.open(whatsappUrl, "_blank");
                       }}
                       className="py-2 gap-2 px-4 hover:shadow-lg flex items-center border-green-600 bg-green-600 text-white font-semibold rounded-md border uppercase hover:bg-white hover:border-green-600 hover:text-green-600 transition-colors group"

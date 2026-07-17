@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { trackConversion } from "../lib/analytics";
 
 const images = [
   { src: "/background-liquidacion-julio.jpg", href: "/liquidacion", external: false },
@@ -48,6 +49,11 @@ export default function BackgroundCarousel() {
           href={images[current].href}
           target={images[current].external ? "_blank" : undefined}
           rel={images[current].external ? "noopener noreferrer" : undefined}
+          onClick={() => {
+            if (images[current].external) {
+              trackConversion("whatsapp", `banner_${images[current].src}`);
+            }
+          }}
           className="absolute top-0 left-0 w-full h-full z-10"
         />
       </div>

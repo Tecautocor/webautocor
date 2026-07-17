@@ -5,6 +5,7 @@ import Spinner from "./Spinner";
 import { useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import { trackConversion } from "../lib/analytics";
 
 export default function FormWA({ time, initialPayment, monthlyPayment, id }) {
   const router = useRouter();
@@ -27,6 +28,7 @@ export default function FormWA({ time, initialPayment, monthlyPayment, id }) {
       setIsLoading(false);
       setIsSuccess(true);
       resetForm();
+      trackConversion("whatsapp", "cotizador_vehiculo");
       router.push(
         "https://api.whatsapp.com/send?phone=593999634418&amp;text=Hola%2C+estoy+interesado"
       );

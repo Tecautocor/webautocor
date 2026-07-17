@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Image from "next/image";
+import { trackConversion } from "../lib/analytics";
 
 const WhatsAppButton = () => {
   const [showModal, setShowModal] = useState(false);
@@ -42,6 +43,8 @@ const WhatsAppButton = () => {
 
     // Redirigir a la URL de WhatsApp usando la URL específica
     const url = `https://api.whatsapp.com/send/?phone=593999634418&text=${encodeURIComponent(message)}&type=phone_number&app_absent=0`;
+
+    trackConversion("whatsapp", "boton_flotante");
 
     // Abrir la URL de WhatsApp en una nueva pestaña
     window.open(url, '_blank');
