@@ -21,19 +21,9 @@ const modelos = [
     title: "Sedán",
   },
   {
-    id: "CROSSOVER",
-    image: "filtro-crossover.jpg",
-    title: "Crossover",
-  },
-  {
     id: "SUV",
     image: "filtro-suv.jpg",
     title: "Suv",
-  },
-  {
-    id: "JEEP",
-    image: "filtro-todoterreno.jpg",
-    title: "Todo Terreno",
   },
   {
     id: "CAMIONETA",
@@ -41,15 +31,17 @@ const modelos = [
     title: "Camioneta",
   },
   {
-    id: "HIBRIDO",
-    image: "autocor-hibrido.jpg",
-    title: "Híbrido",
-  },
-  {
     id: "MOTO",
     image: "autocor-moto.jpg",
     title: "Moto",
   },
+];
+
+const cilindrajes = [
+  { value: "1000-1600", label: "1.0L a 1.6L" },
+  { value: "1600-2000", label: "1.6L a 2.0L" },
+  { value: "2000-3000", label: "2.0L a 3.0L" },
+  { value: "3000+", label: "Más de 3.0L" },
 ];
 
 function classNames(...classes) {
@@ -72,6 +64,8 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
   const [selectedPriceTo, setSelectedPriceTo] = useState("");
   const [selectedYearFrom, setSelectedYearFrom] = useState("");
   const [selectedYearTo, setSelectedYearTo] = useState("");
+  const [selectedTraction, setSelectedTraction] = useState("");
+  const [selectedDisplacement, setSelectedDisplacement] = useState("");
 
   const [selectedModelos, setSelectedModelos] = useState(null);
   const router = useRouter();
@@ -98,6 +92,14 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
   useEffect(() => {
     setSelectedTransmision(router.query.saving_plan_order);
   }, [router.query.saving_plan_order]);
+
+  useEffect(() => {
+    setSelectedTraction(router.query.traction);
+  }, [router.query.traction]);
+
+  useEffect(() => {
+    setSelectedDisplacement(router.query.displacement);
+  }, [router.query.displacement]);
 
   useEffect(() => {
     setSelectedColor(router.query.color);
@@ -472,6 +474,83 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
           </div>
         </div>
 
+        <div className="col-span-1 md:col-span-1 lg:col-span-2">
+          <div className="flex bg-white">
+            <label htmlFor="kmFrom" className="sr-only">
+              Kilometraje desde
+            </label>
+            <input
+              type="text"
+              id="kmFrom"
+              name="kmFrom"
+              defaultValue={router.query.kmFrom || ""}
+              placeholder="Kilometraje desde"
+              className="relative block w-full pl-10 py-3 font-light shadow-lg rounded border-0 focus:z-10 focus:border-main focus:ring-main text-xs"
+            />
+            <KmIcon />
+          </div>
+        </div>
+
+        <div className="col-span-1 md:col-span-1 lg:col-span-2">
+          <div className="flex bg-white">
+            <label htmlFor="kmTo" className="sr-only">
+              Kilometraje hasta
+            </label>
+            <input
+              type="text"
+              id="kmTo"
+              name="kmTo"
+              defaultValue={router.query.kmTo || ""}
+              placeholder="Kilometraje hasta"
+              className="relative block w-full pl-10 py-3 font-light shadow-lg rounded border-0 focus:z-10 focus:border-main focus:ring-main text-xs"
+            />
+            <KmIcon />
+          </div>
+        </div>
+
+        <div className="col-span-1 md:col-span-2 lg:col-span-2">
+          <label htmlFor="traction" className="sr-only">
+            Tracción
+          </label>
+          <div className="flex bg-white">
+            <select
+              id="traction"
+              name="traction"
+              value={selectedTraction || ""}
+              onChange={(e) => setSelectedTraction(e.target.value)}
+              className="relative block w-full pl-10 py-3 font-light shadow-lg rounded border-0 focus:z-10 focus:border-main focus:ring-main text-xs"
+            >
+              <option value="">Tracción</option>
+              <option key="4x2" value="4x2">4x2</option>
+              <option key="4x4" value="4x4">4x4</option>
+            </select>
+            <BrandIcon />
+          </div>
+        </div>
+
+        <div className="col-span-1 md:col-span-2 lg:col-span-2">
+          <label htmlFor="displacement" className="sr-only">
+            Cilindraje
+          </label>
+          <div className="flex bg-white">
+            <select
+              id="displacement"
+              name="displacement"
+              value={selectedDisplacement || ""}
+              onChange={(e) => setSelectedDisplacement(e.target.value)}
+              className="relative block w-full pl-10 py-3 font-light shadow-lg rounded border-0 focus:z-10 focus:border-main focus:ring-main text-xs"
+            >
+              <option value="">Cilindraje</option>
+              {cilindrajes.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+            <BrandIcon />
+          </div>
+        </div>
+
         {/* <div className="col-span-1 md:col-span-4 lg:col-span-3">
           <div className="flex bg-white">
             <div className="flex justify-between px-1 pl-6 py-3 items-center w-full shadow-lg rounded pr-2">
@@ -560,7 +639,7 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
                 </div>
               </RadioGroup.Label>
 
-              <div className="mt-1 grid grid-cols-2 gap-y-6 md:grid-cols-4 md:gap-x-4 lg:grid-cols-4 px-2 divide-x divide-gray-500/20">
+              <div className="mt-1 grid grid-cols-2 gap-y-6 sm:grid-cols-3 md:grid-cols-5 md:gap-x-4 px-2 divide-x divide-gray-500/20">
                 {modelos.map((modelo) => (
                   <RadioGroup.Option
                     key={modelo.id}

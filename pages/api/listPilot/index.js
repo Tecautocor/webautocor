@@ -3,6 +3,14 @@ import db from "../../../lib/db";
 
 const perPage = 20;
 
+// Rangos temporales de cilindraje mientras se confirman los definitivos.
+const DISPLACEMENT_RANGES = {
+  "1000-1600": { min: 1000, max: 1600 },
+  "1600-2000": { min: 1600, max: 2000 },
+  "2000-3000": { min: 2000, max: 3000 },
+  "3000+": { min: 3000, max: null },
+};
+
 export const config = {
   api: {
     bodyParser: true,
@@ -30,6 +38,10 @@ async function handler(req, res) {
       invoice,
       minDays,
       sort,
+      kmFrom,
+      kmTo,
+      traction,
+      displacement,
     } = req.query;
 
     let page = req.query.page || 1;
@@ -99,8 +111,32 @@ async function handler(req, res) {
     if (owner) conditions.push({ owner: { equals: 1 } });
     if (homeMaintenance) conditions.push({ home: { equals: 1 } });
     if (kilometers) conditions.push({ odometer: { lte: 10000 } });
+    if (kmFrom) conditions.push({ odometer: { gte: parseInt(kmFrom) } });
+    if (kmTo) conditions.push({ odometer: { lte: parseInt(kmTo) } });
     if (type) conditions.push({ type: { equals: type } });
     if (invoice) conditions.push({ factory_status: { equals: 'SI' } });
+    if (traction) conditions.push({ accesories: { equals: traction } });
+
+    // business_channel (cilindraje) se guarda como texto, por lo que el rango
+    // numérico se resuelve con CAST igual que el filtro de minDays.
+    if (displacement && DISPLACEMENT_RANGES[displacement]) {
+      const { min, max } = DISPLACEMENT_RANGES[displacement];
+      const rows =
+        max != null
+          ? await db.$queryRaw`
+              SELECT id_record FROM Vehicle
+              WHERE business_channel REGEXP '^[0-9]+$'
+                AND CAST(business_channel AS UNSIGNED) >= ${min}
+                AND CAST(business_channel AS UNSIGNED) <= ${max}
+            `
+          : await db.$queryRaw`
+              SELECT id_record FROM Vehicle
+              WHERE business_channel REGEXP '^[0-9]+$'
+                AND CAST(business_channel AS UNSIGNED) >= ${min}
+            `;
+      const ids = rows.map((r) => r.id_record);
+      conditions.push({ id_record: { in: ids } });
+    }
 
     const where = conditions.length > 0 ? { AND: conditions } : {};
 

@@ -101,6 +101,13 @@ export default function Vehicle() {
   );
 }
 
+const DISPLACEMENT_LABELS = {
+  "1000-1600": "1.0L a 1.6L",
+  "1600-2000": "1.6L a 2.0L",
+  "2000-3000": "2.0L a 3.0L",
+  "3000+": "Más de 3.0L",
+};
+
 function Filters({ tags }) {
   const router = useRouter();
 
@@ -162,6 +169,24 @@ function Filters({ tags }) {
 
     if (tag[0] === "invoice") {
       tagsRevised.push("Auto con factura");
+    }
+
+    if (tag[0] === "kmFrom") {
+      tagsRevised.push("Kilometraje desde: " + tag[1]);
+    }
+
+    if (tag[0] === "kmTo") {
+      tagsRevised.push("Kilometraje hasta: " + tag[1]);
+    }
+
+    if (tag[0] === "traction") {
+      tagsRevised.push("Tracción: " + tag[1]);
+    }
+
+    if (tag[0] === "displacement") {
+      tagsRevised.push(
+        "Cilindraje: " + (DISPLACEMENT_LABELS[tag[1]] || tag[1])
+      );
     }
   });
 
