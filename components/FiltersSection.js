@@ -48,6 +48,10 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
+function onlyDigits(e) {
+  e.target.value = e.target.value.replace(/\D/g, "");
+}
+
 export default function FiltersSection({ brands, years, buttonTitle, action = "/vehiculos" }) {
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
@@ -185,11 +189,16 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
             </label>
             <input
               type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               id="priceFrom"
               name="priceFrom"
               defaultValue={router.query.priceFrom || ""}
               placeholder="Precio desde"
-              onChange={(e) => setSelectedPriceFrom(e.target.value)}
+              onChange={(e) => {
+                onlyDigits(e);
+                setSelectedPriceFrom(e.target.value);
+              }}
               className="relative block w-full pl-10 py-3 font-light shadow-lg rounded border-0 focus:z-10 focus:border-main focus:ring-main text-xs"
             />
             <PriceIcon />
@@ -203,11 +212,16 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
             </label>
             <input
               type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               id="priceTo"
               name="priceTo"
               defaultValue={router.query.priceTo || ""}
               placeholder="Precio hasta"
-              onChange={(e) => setSelectedPriceTo(e.target.value)}
+              onChange={(e) => {
+                onlyDigits(e);
+                setSelectedPriceTo(e.target.value);
+              }}
               className="relative block w-full pl-10 py-3 font-light shadow-lg rounded border-0 focus:z-10 focus:border-main focus:ring-main text-xs"
             />
             <PriceIcon />
@@ -481,10 +495,13 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
             </label>
             <input
               type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               id="kmFrom"
               name="kmFrom"
               defaultValue={router.query.kmFrom || ""}
               placeholder="Kilometraje desde"
+              onChange={onlyDigits}
               className="relative block w-full pl-10 py-3 font-light shadow-lg rounded border-0 focus:z-10 focus:border-main focus:ring-main text-xs"
             />
             <KmIcon />
@@ -498,10 +515,13 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
             </label>
             <input
               type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               id="kmTo"
               name="kmTo"
               defaultValue={router.query.kmTo || ""}
               placeholder="Kilometraje hasta"
+              onChange={onlyDigits}
               className="relative block w-full pl-10 py-3 font-light shadow-lg rounded border-0 focus:z-10 focus:border-main focus:ring-main text-xs"
             />
             <KmIcon />
