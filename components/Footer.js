@@ -57,7 +57,15 @@ export default function Footer() {
         <div className="mx-auto max-w-7xl py-4 px-6 md:flex md:items-center md:justify-center lg:px-8">
           <div className=" md:order-1 md:mt-0">
             <p className="text-center text-xs leading-5 text-gray-100">
-              COPYRIGHT © 2024 | AUTOCOR Todos los derechos reservados
+              COPYRIGHT © 2026 | AUTOCOR Todos los derechos reservados - Powered By{" "}
+              <a
+                href="https://cotedem.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-main"
+              >
+                COTEDEM
+              </a>
             </p>
           </div>
         </div>
