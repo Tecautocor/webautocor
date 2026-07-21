@@ -10,7 +10,7 @@ const agencias = [
     address: "Av. 6 de diciembre SN N61 y Santa Lucia",
     time: "Lunes a Viernes de 08:00 a 18:00, Sábado de 09:00 a 17:00 y Domingo de 10:00 a 14:00",
     location: { latitude: -0.12705068988192195, longitude: -78.47793321363118 },
-    phone: "+593 99 037 4297"
+    phone: "+593 99 965 3587"
   },
   {
     id: 2,
@@ -57,7 +57,7 @@ const agencias = [
     address: "Av. La Prensa N46-15 y, Zamora, Frente al Tecnologico Cordillera",
     time: "Lunes a Viernes de 08:00 a 18:30, Sábado de 09:00 a 17:00 y Domingo de 10:00 - 14:00",
     location: { latitude: -0.15546, longitude: -78.48885 },
-    phone: "+593 99 333 9571"
+    phone: "+593 99 965 3587"
   },
   {
     id: 7,
@@ -66,7 +66,7 @@ const agencias = [
     address: "Av. General Enríquez y San Juan de Dios esquina.",
     time: "Lunes a viernes de 08:00 - 19:00, Sábados de 09:00 - 17:00 y Domingo de 10:00 - 14:00",
     location: { latitude: -0.3049719, longitude: -78.4510271 },
-    phone: "+593 98 300 5861"
+    phone: "+593 99 965 3587"
   },
   {
     id: 8,
