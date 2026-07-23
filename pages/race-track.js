@@ -57,6 +57,12 @@ export default function RaceTrack() {
         <div className="absolute inset-0 bg-gradient-to-br from-red-950 via-black to-black" />
         <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-main/20 rounded-full blur-3xl" />
 
+        <div className="absolute top-4 left-4 z-20 animate__animated animate__pulse animate__infinite animate__slow">
+          <span className="inline-block bg-main text-white text-xs sm:text-sm font-bold uppercase tracking-wide px-4 py-2 rounded-full shadow-lg">
+            🎉 Fiestas de Guayaquil
+          </span>
+        </div>
+
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-8 lg:py-12">
           <div className="flex justify-end">
             <Logo />
