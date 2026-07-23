@@ -1,4 +1,5 @@
 import Head from "next/head";
+import Image from "next/image";
 import Link from "next/link";
 import axios from "axios";
 import { useState } from "react";
@@ -10,13 +11,21 @@ import {
   TagIcon,
 } from "@heroicons/react/24/solid";
 import { RaceTrackSchema } from "../lib/models";
-import { Logo, Spinner } from "../components/Shared";
+import { Spinner } from "../components/Shared";
 
 const features = [
   { icon: ShieldCheckIcon, label: "Confianza Garantizada" },
   { icon: TruckIcon, label: "+500 Seminuevos" },
   { icon: BanknotesIcon, label: "Financiamiento" },
   { icon: TagIcon, label: "Los mejores precios" },
+];
+
+const fireworks = [
+  { top: "-12px", left: "-6px", color: "#fbbf24", delay: "0s", tx: "-22px", ty: "-18px" },
+  { top: "-14px", left: "40%", color: "#f87171", delay: "0.3s", tx: "8px", ty: "-24px" },
+  { top: "-8px", left: "75%", color: "#60a5fa", delay: "0.6s", tx: "24px", ty: "-14px" },
+  { top: "8px", left: "90%", color: "#facc15", delay: "0.9s", tx: "20px", ty: "16px" },
+  { top: "10px", left: "5%", color: "#f472b6", delay: "1.2s", tx: "-20px", ty: "16px" },
 ];
 
 export default function RaceTrack() {
@@ -59,21 +68,81 @@ export default function RaceTrack() {
 
         <div className="absolute top-4 left-4 z-20 animate__animated animate__pulse animate__infinite animate__slow">
           <span className="inline-flex items-center gap-3">
-            <span className="relative inline-block w-14 h-9 sm:w-16 sm:h-10 rounded-sm overflow-hidden ring-1 ring-white/40 shrink-0 shadow-lg">
-              <span className="absolute inset-x-0 top-0 h-1/3 bg-sky-400" />
-              <span className="absolute inset-x-0 top-1/3 h-1/3 bg-white" />
-              <span className="absolute inset-x-0 bottom-0 h-1/3 bg-sky-400" />
-              <span className="absolute top-1 left-1 w-3 h-3 sm:w-3.5 sm:h-3.5 bg-yellow-400 rounded-full" />
-            </span>
-            <span className="text-white text-base sm:text-lg font-bold uppercase tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-              ¡Viva Guayaquil!
+            <svg
+              viewBox="0 0 30 20"
+              className="w-14 h-9 sm:w-16 sm:h-10 shrink-0 shadow-lg"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <rect x="0" y="0" width="30" height="4" fill="#75AADB" />
+              <rect x="0" y="4" width="30" height="4" fill="#ffffff" />
+              <rect x="0" y="8" width="30" height="4" fill="#75AADB" />
+              <rect x="0" y="12" width="30" height="4" fill="#ffffff" />
+              <rect x="0" y="16" width="30" height="4" fill="#75AADB" />
+              {[9, 15, 21].map((cx) => (
+                <g key={cx} transform={`translate(${cx - 1.6}, 8.4) scale(0.032)`}>
+                  <path
+                    d="M50 5 L61 39 L98 39 L68 60 L79 95 L50 73 L21 95 L32 60 L2 39 L39 39 Z"
+                    fill="#ffffff"
+                  />
+                </g>
+              ))}
+            </svg>
+            <span className="relative inline-block">
+              <span className="relative z-10 text-white text-base sm:text-lg font-bold uppercase tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+                ¡Viva Guayaquil!
+              </span>
+              {fireworks.map((fw, i) => (
+                <span
+                  key={i}
+                  className="firework-spark"
+                  style={{
+                    top: fw.top,
+                    left: fw.left,
+                    background: fw.color,
+                    boxShadow: `0 0 6px 2px ${fw.color}`,
+                    animationDelay: fw.delay,
+                    "--tx": fw.tx,
+                    "--ty": fw.ty,
+                  }}
+                />
+              ))}
+              <style jsx>{`
+                .firework-spark {
+                  position: absolute;
+                  width: 4px;
+                  height: 4px;
+                  border-radius: 50%;
+                  opacity: 0;
+                  animation: fw-spark 1.8s ease-out infinite;
+                }
+                @keyframes fw-spark {
+                  0% {
+                    transform: translate(0, 0) scale(0.3);
+                    opacity: 1;
+                  }
+                  70% {
+                    opacity: 1;
+                  }
+                  100% {
+                    transform: translate(var(--tx), var(--ty)) scale(1);
+                    opacity: 0;
+                  }
+                }
+              `}</style>
             </span>
           </span>
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-8 lg:py-12">
           <div className="flex justify-end">
-            <Logo />
+            <Image
+              src="/logo-autocor.png"
+              alt="AUTOCOR"
+              width={150}
+              height={68}
+              priority
+              unoptimized
+            />
           </div>
 
           <div className="mt-16 lg:mt-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
