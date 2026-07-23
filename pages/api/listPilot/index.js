@@ -1,4 +1,5 @@
 import axios from "axios";
+import { Prisma } from "@prisma/client";
 import db from "../../../lib/db";
 
 const perPage = 20;
@@ -149,6 +150,23 @@ async function handler(req, res) {
         skip: (page - 1) * perPage,
       });
 
+      // Marca cuáles de estos vehículos están en liquidación (para mostrar el
+      // sticker + precio "antes/ahora" en las tarjetas, igual que en /liquidacion).
+      const plates = response.map((v) => v.license_plate).filter(Boolean);
+      let liqRows = [];
+      if (plates.length > 0) {
+        liqRows = await db.$queryRaw`
+          SELECT license_plate, stock_value, bono FROM LiquidacionVehicle
+          WHERE license_plate IN (${Prisma.join(plates)})
+        `;
+      }
+      const liqMap = Object.fromEntries(liqRows.map((r) => [r.license_plate, r]));
+      const enrichedResponse = response.map((v) => ({
+        ...v,
+        stock_value: liqMap[v.license_plate]?.stock_value ?? null,
+        bono: liqMap[v.license_plate]?.bono ?? null,
+      }));
+
       return res.status(200).json({
         aditional_data: {
           page: page,
@@ -158,7 +176,7 @@ async function handler(req, res) {
           rows_in_page: response.length,
           rows_remaining: responseCount - perPage * page,
         },
-        entitydata: response,
+        entitydata: enrichedResponse,
       });
     } catch (err) {
       console.log(err);

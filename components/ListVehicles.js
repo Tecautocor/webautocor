@@ -16,12 +16,23 @@ export default function List({ list, liquidacion = false }) {
         <div className="relative pb-4">
           <div className="relative">
             <div className="mx-auto mt-2 grid max-w-md gap-8 px-6 sm:max-w-lg lg:max-w-7xl lg:grid-cols-4 lg:px-8">
-              {list.map((listItem) => (
+              {list.map((listItem) => {
+                const hasStockValue = listItem.stock_value !== null && listItem.stock_value !== undefined;
+                const stockValue = hasStockValue ? Number(listItem.stock_value) : precioAntes(Number(listItem.prices | 0));
+                const bono = Number(listItem.bono | 0);
+                const precioFinal = hasStockValue ? stockValue - bono : Number(listItem.prices | 0);
+
+                return (
                 <div
                   key={listItem.id}
                   className="flex flex-col overflow-hidden rounded-lg shadow-lg"
                 >
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0 relative">
+                    {hasStockValue && (
+                      <span className="absolute top-2 right-2 z-10 bg-red-600 text-white text-xs font-bold uppercase px-2 py-1 rounded shadow">
+                        Liquidación
+                      </span>
+                    )}
                     <Link href={"/vehiculos/" + listItem.id}>
                       {listItem.media ? (
                         <Image
@@ -47,9 +58,9 @@ export default function List({ list, liquidacion = false }) {
                   <div className="flex flex-1 flex-col justify-between bg-white p-6">
                   <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-600 uppercase text-center">
-                    
+
                       {listItem.owner_branch_code}
-                      
+
                       </p>
                     </div>
                     <div className="flex-1">
@@ -58,13 +69,7 @@ export default function List({ list, liquidacion = false }) {
                       </p>
                     </div>
 
-                    {liquidacion ? (() => {
-                      const hasStockValue = listItem.stock_value !== null && listItem.stock_value !== undefined;
-                      const stockValue = hasStockValue ? Number(listItem.stock_value) : precioAntes(Number(listItem.prices | 0));
-                      const bono = Number(listItem.bono | 0);
-                      const precioFinal = hasStockValue ? stockValue - bono : Number(listItem.prices | 0);
-
-                      return (
+                    {(liquidacion || hasStockValue) ? (
                       <div className="flex flex-col py-2 mb-2 gap-1">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold bg-red-100 text-red-600 px-2 py-0.5 rounded uppercase tracking-wide">
@@ -94,8 +99,7 @@ export default function List({ list, liquidacion = false }) {
                           <span className="ml-1">/mes</span>
                         </div>
                       </div>
-                      );
-                    })() : (
+                    ) : (
                       <div className="flex justify-between py-2 items-center mb-2">
                         <div className="text-main text-1xl font-bold flex justify-center mx-2">
                           ${" "}
@@ -160,7 +164,8 @@ export default function List({ list, liquidacion = false }) {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
