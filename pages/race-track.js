@@ -68,7 +68,7 @@ export default function RaceTrack() {
       <div className="min-h-screen bg-black relative overflow-hidden">
         {/* Fondo con degradado rojo/negro */}
         <div className="absolute inset-0 bg-gradient-to-br from-red-950 via-black to-black" />
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-main/20 rounded-full blur-3xl" />
+        <div className="absolute -top-20 -left-20 w-[300px] h-[300px] sm:-top-40 sm:-left-40 sm:w-[600px] sm:h-[600px] bg-main/20 rounded-full blur-3xl" />
 
         <div className="absolute top-8 left-4 z-20 animate__animated animate__pulse animate__infinite animate__slow">
           <span className="inline-flex items-center gap-3">
@@ -137,7 +137,7 @@ export default function RaceTrack() {
           </span>
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-8 lg:py-12">
+        <div className="relative z-10 max-w-7xl mx-auto px-6 py-8 lg:py-12 w-full min-w-0">
           <div className="flex justify-end">
             <Image
               src="/logo-autocor.png"
@@ -146,21 +146,22 @@ export default function RaceTrack() {
               height={75}
               priority
               unoptimized
+              className="h-auto w-24 sm:w-[165px]"
             />
           </div>
 
           <div className="mt-16 lg:mt-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Columna izquierda: hero */}
-            <div>
+            <div className="min-w-0">
               <span className="inline-block bg-main/20 border border-main text-main text-xs font-semibold uppercase tracking-widest px-4 py-2 rounded-full">
                 Evento Exclusivo
               </span>
 
-              <h1 className="mt-6 font-poppins font-black uppercase text-6xl sm:text-7xl lg:text-8xl leading-none text-white drop-shadow-[0_0_25px_rgba(228,61,48,0.5)]">
+              <h1 className="mt-6 font-poppins font-black uppercase text-4xl sm:text-6xl lg:text-8xl leading-none text-white drop-shadow-[0_0_25px_rgba(228,61,48,0.5)] break-words">
                 Race Track
               </h1>
 
-              <p className="mt-6 text-lg text-white/70 font-light">
+              <p className="mt-6 text-base sm:text-lg text-white/70 font-light">
                 Ponte al volante y siente la adrenalina en la pista.
               </p>
 
@@ -168,7 +169,7 @@ export default function RaceTrack() {
                 {features.map(({ icon: Icon, label }) => (
                   <div
                     key={label}
-                    className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-lg px-4 py-3"
+                    className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-lg px-4 py-3 min-w-0"
                   >
                     <Icon className="w-5 h-5 text-main shrink-0" />
                     <span className="text-white text-sm font-medium">
@@ -180,7 +181,7 @@ export default function RaceTrack() {
             </div>
 
             {/* Columna derecha: formulario */}
-            <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-8 backdrop-blur-sm">
+            <div className="min-w-0 bg-white/[0.04] border border-white/10 rounded-2xl p-6 sm:p-8 backdrop-blur-sm">
               <h2 className="font-poppins font-bold text-2xl text-white">
                 Regístrate
               </h2>
