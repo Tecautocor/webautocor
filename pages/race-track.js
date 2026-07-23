@@ -58,7 +58,9 @@ export default function RaceTrack() {
         <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-main/20 rounded-full blur-3xl" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-8 lg:py-12">
-          <Logo />
+          <div className="flex justify-end">
+            <Logo />
+          </div>
 
           <div className="mt-16 lg:mt-20 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Columna izquierda: hero */}
