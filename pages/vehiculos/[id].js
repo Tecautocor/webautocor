@@ -15,6 +15,7 @@ import Head from "next/head";
 import {
   useGetStockDetailsQuery,
   useGetStockImagesQuery,
+  useGetLiquidacionInfoQuery,
 } from "../../lib/hooks";
 import { SectionText, Spinner, LinkButton } from "../../components/Shared";
 import { calcCuotaXMeses, calcCuota48Meses } from "../../lib/utils";
@@ -31,6 +32,15 @@ export default function Details() {
   const { data, isLoading, isError } = useGetStockDetailsQuery(router.query.id);
   const { data: dataImages } = useGetStockImagesQuery(router.query.id);
 
+  const licensePlate = data?.result?.entitydata?.license_plate;
+  const { data: liqData } = useGetLiquidacionInfoQuery(licensePlate);
+
+  const rawPrice = data ? Number(data.result.entitydata.prices[0].value) : 0;
+  const liq = liqData?.result?.entitydata;
+  const hasLiquidacion = !!(liq && liq.stock_value != null);
+  const stockValue = hasLiquidacion ? Number(liq.stock_value) : rawPrice;
+  const bono = hasLiquidacion ? Number(liq.bono || 0) : 0;
+  const finalPrice = hasLiquidacion ? stockValue - bono : rawPrice;
 
   const [fullImageOpen, setFullImageOpen] = useState(false); // Estado para imagen a pantalla completa
   const [isZoomed, setIsZoomed] = useState(false); // Estado para el zoom
@@ -56,10 +66,10 @@ export default function Details() {
   }, [dataImages]);
 
   useEffect(() => {
-    if (data) {
-      setAmount(Number(data.result.entitydata.prices[0].value) * 0.3);
+    if (finalPrice) {
+      setAmount(finalPrice * 0.3);
     }
-  }, [data]);
+  }, [finalPrice]);
 
   // Función para ir a la imagen anterior
   const prevImage = () => {
@@ -96,7 +106,7 @@ export default function Details() {
         <Head>
           <title>{`AUTOCOR | ${data.result.entitydata.brand} ${data.result.entitydata.model}`}</title>
           <meta property="og:title" content={`AUTOCOR | ${data.result.entitydata.brand} ${data.result.entitydata.model}`} />
-          <meta property="og:description" content={`Año: ${data.result.entitydata.year}. Precio: $${new Intl.NumberFormat("es-EC", { maximumFractionDigits: 0 }).format(data.result.entitydata.prices[0].value)}`} />
+          <meta property="og:description" content={`Año: ${data.result.entitydata.year}. Precio: $${new Intl.NumberFormat("es-EC", { maximumFractionDigits: 0 }).format(finalPrice)}`} />
           <meta property="og:image" content={slide} />
         </Head>
         {isLoading && (
@@ -253,12 +263,26 @@ export default function Details() {
                     {data.result.entitydata.owner_branch_code?.name ||
                       "No disponible"}
                   </p>
-                  <p className="text-main  text-3xl lg:text-5xl font-bold mt-6 text-center lg:text-left">
+                  {hasLiquidacion && (
+                    <p className="flex items-center gap-2 justify-center lg:justify-start mt-6">
+                      <span className="text-xs font-semibold bg-red-100 text-red-600 px-2 py-0.5 rounded uppercase tracking-wide">
+                        Antes
+                      </span>
+                      <span className="text-gray-400 text-lg line-through">
+                        ${" "}
+                        {new Intl.NumberFormat("es-EC", {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        }).format(stockValue)}
+                      </span>
+                    </p>
+                  )}
+                  <p className={`text-main text-3xl lg:text-5xl font-bold text-center lg:text-left ${hasLiquidacion ? "mt-1" : "mt-6"}`}>
                     ${" "}
                     {new Intl.NumberFormat("es-EC", {
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 0,
-                    }).format(data.result.entitydata.prices[0].value | 0)}
+                    }).format(finalPrice | 0)}
                   </p>
                   <p className="text-gray-500  text-xl lg:text-2xl mt-2 text-center lg:text-left">
                     ${" "}
@@ -266,9 +290,7 @@ export default function Details() {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     }).format(
-                      calcCuota48Meses(
-                        Number(data.result.entitydata.prices[0].value)
-                      ) | 0
+                      calcCuota48Meses(finalPrice) | 0
                     )}
                     <span className="text-lg">/mes</span>
                   </p>
@@ -285,7 +307,7 @@ export default function Details() {
                         const price = new Intl.NumberFormat("es-EC", {
                           minimumFractionDigits: 0,
                           maximumFractionDigits: 0,
-                        }).format(data.result.entitydata.prices[0]?.value || 0); // Asegúrate de que la propiedad exista
+                        }).format(finalPrice || 0);
                         const message = `¡Hola Autocor!! \n\nMe interesa este auto:\n\nMarca:${brand}\nModelo: ${model}\nAño: ${year}\nPrecio: $${price}\nAgencia: ${agency}\n\n${currentUrl}`;
                         const whatsappUrl = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
                         trackConversion("whatsapp", "agendar_detalle_vehiculo");
@@ -399,7 +421,7 @@ export default function Details() {
                 subtitle="Plazos adaptados a tus necesidades"
               />
 
-              <Pricing value={data.result.entitydata.prices[0].value} />
+              <Pricing value={finalPrice} />
             </div>
 
             <div
@@ -407,7 +429,7 @@ export default function Details() {
               id="budget"
             >
               <BudgetTool
-                value={data.result.entitydata.prices[0].value}
+                value={finalPrice}
                 amount={amount}
                 setAmount={(value) => setAmount(value)}
                 time={time}
