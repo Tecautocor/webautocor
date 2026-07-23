@@ -21,11 +21,15 @@ const features = [
 ];
 
 const fireworks = [
-  { top: "-12px", left: "-6px", color: "#fbbf24", delay: "0s", tx: "-22px", ty: "-18px" },
-  { top: "-14px", left: "40%", color: "#f87171", delay: "0.3s", tx: "8px", ty: "-24px" },
-  { top: "-8px", left: "75%", color: "#60a5fa", delay: "0.6s", tx: "24px", ty: "-14px" },
-  { top: "8px", left: "90%", color: "#facc15", delay: "0.9s", tx: "20px", ty: "16px" },
-  { top: "10px", left: "5%", color: "#f472b6", delay: "1.2s", tx: "-20px", ty: "16px" },
+  { top: "-16px", left: "-10%", color: "#fbbf24", delay: "0s", tx: "-30px", ty: "-24px" },
+  { top: "-20px", left: "20%", color: "#f87171", delay: "0.2s", tx: "-6px", ty: "-32px" },
+  { top: "-18px", left: "50%", color: "#34d399", delay: "0.4s", tx: "10px", ty: "-30px" },
+  { top: "-14px", left: "80%", color: "#60a5fa", delay: "0.6s", tx: "30px", ty: "-20px" },
+  { top: "-6px", left: "100%", color: "#facc15", delay: "0.8s", tx: "34px", ty: "0px" },
+  { top: "10px", left: "95%", color: "#a78bfa", delay: "1s", tx: "28px", ty: "20px" },
+  { top: "14px", left: "60%", color: "#f472b6", delay: "1.2s", tx: "12px", ty: "26px" },
+  { top: "16px", left: "25%", color: "#fb923c", delay: "1.4s", tx: "-14px", ty: "24px" },
+  { top: "8px", left: "-8%", color: "#38bdf8", delay: "1.6s", tx: "-30px", ty: "10px" },
 ];
 
 export default function RaceTrack() {
@@ -66,7 +70,7 @@ export default function RaceTrack() {
         <div className="absolute inset-0 bg-gradient-to-br from-red-950 via-black to-black" />
         <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-main/20 rounded-full blur-3xl" />
 
-        <div className="absolute top-4 left-4 z-20 animate__animated animate__pulse animate__infinite animate__slow">
+        <div className="absolute top-8 left-4 z-20 animate__animated animate__pulse animate__infinite animate__slow">
           <span className="inline-flex items-center gap-3">
             <svg
               viewBox="0 0 30 20"
@@ -99,7 +103,7 @@ export default function RaceTrack() {
                     top: fw.top,
                     left: fw.left,
                     background: fw.color,
-                    boxShadow: `0 0 6px 2px ${fw.color}`,
+                    boxShadow: `0 0 10px 4px ${fw.color}`,
                     animationDelay: fw.delay,
                     "--tx": fw.tx,
                     "--ty": fw.ty,
@@ -109,8 +113,8 @@ export default function RaceTrack() {
               <style jsx>{`
                 .firework-spark {
                   position: absolute;
-                  width: 4px;
-                  height: 4px;
+                  width: 7px;
+                  height: 7px;
                   border-radius: 50%;
                   opacity: 0;
                   animation: fw-spark 1.8s ease-out infinite;
@@ -138,8 +142,8 @@ export default function RaceTrack() {
             <Image
               src="/logo-autocor.png"
               alt="AUTOCOR"
-              width={150}
-              height={68}
+              width={165}
+              height={75}
               priority
               unoptimized
             />
