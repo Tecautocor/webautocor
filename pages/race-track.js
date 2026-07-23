@@ -58,8 +58,14 @@ export default function RaceTrack() {
         <div className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-main/20 rounded-full blur-3xl" />
 
         <div className="absolute top-4 left-4 z-20 animate__animated animate__pulse animate__infinite animate__slow">
-          <span className="inline-block bg-main text-white text-xs sm:text-sm font-bold uppercase tracking-wide px-4 py-2 rounded-full shadow-lg">
-            🎉 Fiestas de Guayaquil
+          <span className="inline-flex items-center gap-2 bg-main text-white text-xs sm:text-sm font-bold uppercase tracking-wide px-4 py-2 rounded-full shadow-lg">
+            <span className="relative inline-block w-6 h-4 rounded-sm overflow-hidden ring-1 ring-white/40 shrink-0">
+              <span className="absolute inset-x-0 top-0 h-1/3 bg-sky-400" />
+              <span className="absolute inset-x-0 top-1/3 h-1/3 bg-white" />
+              <span className="absolute inset-x-0 bottom-0 h-1/3 bg-sky-400" />
+              <span className="absolute top-0.5 left-0.5 w-2 h-2 bg-yellow-400 rounded-full" />
+            </span>
+            ¡Viva Guayaquil!
           </span>
         </div>
 
