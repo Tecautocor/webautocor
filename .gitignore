@@ -39,6 +39,11 @@ next-env.d.ts
 # carpetas de referencia/borradores sueltos en el proyecto, no son parte de la app
 /Banners/
 /LOPDP/
+/Cotizador de Seguros/
+/Rediseño Web/
+
+# credenciales y llaves de acceso — solo deben vivir en la carpeta compartida (OneDrive), nunca en git
+/Acceso y Credenciales/
 
 # dump de base de datos subido por error — no debe versionarse
 *.sql
