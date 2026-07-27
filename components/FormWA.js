@@ -30,7 +30,7 @@ export default function FormWA({ time, initialPayment, monthlyPayment, id }) {
       resetForm();
       trackConversion("whatsapp", "cotizador_vehiculo");
       router.push(
-        "https://api.whatsapp.com/send?phone=593999634418&amp;text=Hola%2C+estoy+interesado"
+        "https://api.whatsapp.com/send?phone=593999653587&amp;text=Hola%2C+estoy+interesado"
       );
     } catch (error) {
       setIsLoading(false);
