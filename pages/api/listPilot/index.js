@@ -43,6 +43,7 @@ async function handler(req, res) {
       kmTo,
       traction,
       displacement,
+      priceSort,
     } = req.query;
 
     let page = req.query.page || 1;
@@ -141,6 +142,11 @@ async function handler(req, res) {
 
     const where = conditions.length > 0 ? { AND: conditions } : {};
 
+    const orderBy =
+      priceSort === "asc" || priceSort === "desc"
+        ? { prices: priceSort }
+        : undefined;
+
     try {
       const responseCount = await db.vehicle.count({ where: where });
 
@@ -148,6 +154,7 @@ async function handler(req, res) {
         where: where,
         take: perPage,
         skip: (page - 1) * perPage,
+        orderBy: orderBy,
       });
 
       // Marca cuáles de estos vehículos están en liquidación (para mostrar el

@@ -2,6 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   // swcMinify ya no es necesario en Next 15, puedes quitarlo
+  experimental: {
+    scrollRestoration: true,
+  },
   images: {
     remotePatterns: [
       {

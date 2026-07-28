@@ -15,11 +15,23 @@ import { SectionText, Spinner } from "../../components/Shared";
 export default function Vehicle() {
   const router = useRouter();
   const params = router.query;
-  const { data, isLoading, isError } = useListStockQuery(params);
+  const { data, isLoading, isFetching, isError } = useListStockQuery(params);
 
   const { data: years } = useListYearQuery();
 
   const { data: brands } = useListBrandQuery();
+
+  // Solo debe reiniciarse el formulario de filtros cuando cambian los filtros
+  // reales - "page" y "priceSort" cambian con la paginacion/orden y no deben
+  // forzar un remontaje completo (eso disparaba el "scroll anchoring" del
+  // navegador y hacia saltar la pagina al usar los botones de orden).
+  const filterKey = JSON.stringify(
+    Object.fromEntries(
+      Object.entries(router.query).filter(
+        ([key]) => key !== "page" && key !== "priceSort"
+      )
+    )
+  );
 
   return (
     <Layout selected="vehicles">
@@ -34,7 +46,7 @@ export default function Vehicle() {
         />
 
         <FiltersSection
-          key={router.asPath}
+          key={filterKey}
           brands={brands}
           years={years}
           buttonTitle="Aplicar Filtro"
@@ -42,23 +54,29 @@ export default function Vehicle() {
       </div>
 
       <div className="bg-white flex justify-center flex-col items-center pt-4 pb-4">
-        <div className="pb-4 flex-col justify-center items-center">
-          <div className="py-2 flex flex-col lg:flex-row justify-between items-center gap-4">
-            {Object.entries(router.query).filter(
-              (filter) => filter[1] !== "" && filter[0] !== "page"
-            ).length > 0 ? (
-              <Filters
-                tags={Object.entries(router.query).filter(
-                  (filter) => filter[1] !== "" && filter[0] !== "page"
-                )}
-              />
-            ) : (
-              <div></div>
-            )}
+        <div className="pb-4 flex-col justify-center items-center w-full">
+          <div className="mx-auto max-w-md gap-4 px-6 sm:max-w-lg lg:max-w-7xl lg:px-8 py-2 grid grid-cols-1 lg:grid-cols-3 items-center">
+            <div className="flex justify-center lg:justify-start">
+              {Object.entries(router.query).filter(
+                (filter) => filter[1] !== "" && filter[0] !== "page" && filter[0] !== "priceSort"
+              ).length > 0 && (
+                <Filters
+                  tags={Object.entries(router.query).filter(
+                    (filter) => filter[1] !== "" && filter[0] !== "page" && filter[0] !== "priceSort"
+                  )}
+                />
+              )}
+            </div>
 
-            {!isLoading && !isError && data && (
-              <Pagination pagination={data.aditional_data} />
-            )}
+            <div className="flex justify-center">
+              <SortByPrice />
+            </div>
+
+            <div className="flex justify-center lg:justify-end">
+              {!isLoading && !isError && data && (
+                <Pagination pagination={data.aditional_data} />
+              )}
+            </div>
           </div>
           {isLoading && (
             <p className="bg-white flex justify-center flex-col items-center pt-4 pb-10 px-8">
@@ -88,7 +106,15 @@ export default function Vehicle() {
             </div>
           )}
           
-          {!isLoading && !isError && data && <List list={data.entitydata} /> }
+          {!isLoading && !isError && data && (
+            <div
+              className={
+                isFetching ? "opacity-50 transition-opacity" : "transition-opacity"
+              }
+            >
+              <List list={data.entitydata} />
+            </div>
+          )}
 
           {!isLoading && !isError && data && (
             <div className="flex justify-end">
@@ -220,6 +246,73 @@ function Filters({ tags }) {
           </svg>
         </button>
       )}
+    </div>
+  );
+}
+
+function SortByPrice() {
+  const router = useRouter();
+  const params = router.query;
+  const currentSort = params.priceSort;
+
+  const setSort = (value) => {
+    const newParams = { ...params, page: 1 };
+    if (currentSort === value) {
+      delete newParams.priceSort; // clic de nuevo sobre el activo lo desactiva
+    } else {
+      newParams.priceSort = value;
+    }
+    router.push(
+      { pathname: "/vehiculos", query: newParams },
+      undefined,
+      { scroll: false }
+    );
+  };
+
+  const base =
+    "py-2 gap-1.5 px-3 flex items-center text-xs font-semibold rounded-md border uppercase transition-colors";
+  const active = "bg-main text-white border-main";
+  const inactive =
+    "bg-white text-gray-600 border-gray-300 hover:border-main hover:text-main";
+
+  return (
+    <div className="flex gap-2 shrink-0">
+      <button
+        onClick={() => setSort("asc")}
+        className={`${base} ${currentSort === "asc" ? active : inactive}`}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          className="w-3.5 h-3.5"
+        >
+          <path
+            fillRule="evenodd"
+            d="M11.47 4.72a.75.75 0 011.06 0l7.5 7.5a.75.75 0 11-1.06 1.06l-6.22-6.22V21a.75.75 0 01-1.5 0V7.06l-6.22 6.22a.75.75 0 11-1.06-1.06l7.5-7.5z"
+            clipRule="evenodd"
+          />
+        </svg>
+        <p>Menor a mayor</p>
+      </button>
+      <button
+        onClick={() => setSort("desc")}
+        className={`${base} ${currentSort === "desc" ? active : inactive}`}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          className="w-3.5 h-3.5"
+        >
+          <path
+            fillRule="evenodd"
+            d="M12 2.25a.75.75 0 01.75.75v13.19l6.22-6.22a.75.75 0 111.06 1.06l-7.5 7.5a.75.75 0 01-1.06 0l-7.5-7.5a.75.75 0 111.06-1.06l6.22 6.22V3a.75.75 0 01.75-.75z"
+            clipRule="evenodd"
+          />
+        </svg>
+        <p>Mayor a menor</p>
+      </button>
     </div>
   );
 }
