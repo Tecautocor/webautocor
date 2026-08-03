@@ -47,3 +47,6 @@ next-env.d.ts
 
 # dump de base de datos subido por error — no debe versionarse
 *.sql
+
+# worktrees temporales de Claude Code — no son parte de la app
+/.claude/
