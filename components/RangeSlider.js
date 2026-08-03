@@ -7,7 +7,7 @@ function onlyDigits(value) {
 // Silueta de auto ya usada en los filtros (Marca/Modelo/etc, ver BrandIcon en
 // FiltersSection.js) - se reexporta aca sin las clases de posicionamiento
 // absoluto para poder reusarla como manija del slider y en el menu Ordenar.
-export function CarIcon({ className = "w-4 h-4", fill = "#E53D30" }) {
+export function CarIcon({ className = "w-4 h-4", fill = "currentColor" }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -157,13 +157,13 @@ export default function RangeSlider({
               className="pointer-events-none absolute top-1/2 flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-main bg-white shadow"
               style={{ left: `${pctFrom}%` }}
             >
-              <CarIcon className="w-3.5 h-3.5" />
+              <CarIcon className="w-3.5 h-3.5" fill="#e43d30" />
             </div>
             <div
               className="pointer-events-none absolute top-1/2 flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-main bg-white shadow"
               style={{ left: `${pctTo}%` }}
             >
-              <CarIcon className="w-3.5 h-3.5" />
+              <CarIcon className="w-3.5 h-3.5" fill="#e43d30" />
             </div>
           </div>
           <div className="flex justify-between text-[10px] text-gray-400">

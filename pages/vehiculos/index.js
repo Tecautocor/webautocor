@@ -294,7 +294,7 @@ function SortDropdown() {
 
   return (
     <Menu as="div" className="relative shrink-0">
-      <Menu.Button className="flex items-center gap-1.5 py-2 px-3 text-xs font-semibold text-gray-600 hover:text-main uppercase">
+      <Menu.Button className="flex items-center gap-2 py-2.5 px-4 text-xs font-bold text-main uppercase bg-white shadow-lg rounded-md border-2 border-main hover:bg-main hover:text-white transition-colors">
         <current.Icon className="w-4 h-4" />
         <span>Ordenar: {current.label}</span>
         <ChevronDownIcon className="w-4 h-4" />
@@ -323,7 +323,7 @@ function SortDropdown() {
                       currentSort === value ? "opacity-100" : "opacity-0"
                     }`}
                   />
-                  <Icon className="w-4 h-4 shrink-0 text-gray-400" />
+                  <Icon className="w-4 h-4 shrink-0 text-main" />
                   {label}
                 </button>
               )}
