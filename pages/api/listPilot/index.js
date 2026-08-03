@@ -12,6 +12,18 @@ const DISPLACEMENT_RANGES = {
   "3000+": { min: 3000, max: null },
 };
 
+// Opciones del menu "Ordenar" del listado (ver SortDropdown en
+// pages/vehiculos/index.js). "recomendado" no aparece aca - sin match
+// devuelve orderBy undefined, que es el orden default de MySQL.
+const SORT_OPTIONS = {
+  price_asc: { prices: "asc" },
+  price_desc: { prices: "desc" },
+  km_asc: { odometer: "asc" },
+  km_desc: { odometer: "desc" },
+  year_asc: { year: "asc" },
+  year_desc: { year: "desc" },
+};
+
 export const config = {
   api: {
     bodyParser: true,
@@ -43,7 +55,7 @@ async function handler(req, res) {
       kmTo,
       traction,
       displacement,
-      priceSort,
+      sortBy,
     } = req.query;
 
     let page = req.query.page || 1;
@@ -142,10 +154,7 @@ async function handler(req, res) {
 
     const where = conditions.length > 0 ? { AND: conditions } : {};
 
-    const orderBy =
-      priceSort === "asc" || priceSort === "desc"
-        ? { prices: priceSort }
-        : undefined;
+    const orderBy = SORT_OPTIONS[sortBy];
 
     try {
       const responseCount = await db.vehicle.count({ where: where });

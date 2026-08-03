@@ -10,6 +10,9 @@ import {
 } from "../../lib/hooks";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import { Menu, Transition } from "@headlessui/react";
+import { Fragment } from "react";
+import { CheckIcon, ChevronDownIcon } from "@heroicons/react/20/solid";
 import { SectionText, Spinner } from "../../components/Shared";
 
 export default function Vehicle() {
@@ -22,13 +25,13 @@ export default function Vehicle() {
   const { data: brands } = useListBrandQuery();
 
   // Solo debe reiniciarse el formulario de filtros cuando cambian los filtros
-  // reales - "page" y "priceSort" cambian con la paginacion/orden y no deben
+  // reales - "page" y "sortBy" cambian con la paginacion/orden y no deben
   // forzar un remontaje completo (eso disparaba el "scroll anchoring" del
-  // navegador y hacia saltar la pagina al usar los botones de orden).
+  // navegador y hacia saltar la pagina al usar el menu de orden).
   const filterKey = JSON.stringify(
     Object.fromEntries(
       Object.entries(router.query).filter(
-        ([key]) => key !== "page" && key !== "priceSort"
+        ([key]) => key !== "page" && key !== "sortBy"
       )
     )
   );
@@ -58,18 +61,18 @@ export default function Vehicle() {
           <div className="mx-auto max-w-md gap-4 px-6 sm:max-w-lg lg:max-w-7xl lg:px-8 py-2 grid grid-cols-1 lg:grid-cols-3 items-center">
             <div className="flex justify-center lg:justify-start">
               {Object.entries(router.query).filter(
-                (filter) => filter[1] !== "" && filter[0] !== "page" && filter[0] !== "priceSort"
+                (filter) => filter[1] !== "" && filter[0] !== "page" && filter[0] !== "sortBy"
               ).length > 0 && (
                 <Filters
                   tags={Object.entries(router.query).filter(
-                    (filter) => filter[1] !== "" && filter[0] !== "page" && filter[0] !== "priceSort"
+                    (filter) => filter[1] !== "" && filter[0] !== "page" && filter[0] !== "sortBy"
                   )}
                 />
               )}
             </div>
 
             <div className="flex justify-center">
-              <SortByPrice />
+              <SortDropdown />
             </div>
 
             <div className="flex justify-center lg:justify-end">
@@ -250,17 +253,27 @@ function Filters({ tags }) {
   );
 }
 
-function SortByPrice() {
+const SORT_LABELS = {
+  "": "Recomendado",
+  price_asc: "Menor precio",
+  price_desc: "Mayor precio",
+  km_asc: "Menor kilometraje",
+  km_desc: "Mayor kilometraje",
+  year_desc: "Año más reciente",
+  year_asc: "Año menos reciente",
+};
+
+function SortDropdown() {
   const router = useRouter();
   const params = router.query;
-  const currentSort = params.priceSort;
+  const currentSort = params.sortBy || "";
 
   const setSort = (value) => {
     const newParams = { ...params, page: 1 };
-    if (currentSort === value) {
-      delete newParams.priceSort; // clic de nuevo sobre el activo lo desactiva
+    if (value === "") {
+      delete newParams.sortBy;
     } else {
-      newParams.priceSort = value;
+      newParams.sortBy = value;
     }
     router.push(
       { pathname: "/vehiculos", query: newParams },
@@ -269,51 +282,44 @@ function SortByPrice() {
     );
   };
 
-  const base =
-    "py-2 gap-1.5 px-3 flex items-center text-xs font-semibold rounded-md border uppercase transition-colors";
-  const active = "bg-main text-white border-main";
-  const inactive =
-    "bg-white text-gray-600 border-gray-300 hover:border-main hover:text-main";
-
   return (
-    <div className="flex gap-2 shrink-0">
-      <button
-        onClick={() => setSort("asc")}
-        className={`${base} ${currentSort === "asc" ? active : inactive}`}
+    <Menu as="div" className="relative shrink-0">
+      <Menu.Button className="flex items-center gap-1.5 py-2 px-3 text-xs font-semibold text-gray-600 hover:text-main uppercase">
+        <span>Ordenar: {SORT_LABELS[currentSort]}</span>
+        <ChevronDownIcon className="w-4 h-4" />
+      </Menu.Button>
+      <Transition
+        as={Fragment}
+        enter="transition ease-out duration-100"
+        enterFrom="transform opacity-0 scale-95"
+        enterTo="transform opacity-100 scale-100"
+        leave="transition ease-in duration-75"
+        leaveFrom="transform opacity-100 scale-100"
+        leaveTo="transform opacity-0 scale-95"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          className="w-3.5 h-3.5"
-        >
-          <path
-            fillRule="evenodd"
-            d="M11.47 4.72a.75.75 0 011.06 0l7.5 7.5a.75.75 0 11-1.06 1.06l-6.22-6.22V21a.75.75 0 01-1.5 0V7.06l-6.22 6.22a.75.75 0 11-1.06-1.06l7.5-7.5z"
-            clipRule="evenodd"
-          />
-        </svg>
-        <p>Menor a mayor</p>
-      </button>
-      <button
-        onClick={() => setSort("desc")}
-        className={`${base} ${currentSort === "desc" ? active : inactive}`}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          className="w-3.5 h-3.5"
-        >
-          <path
-            fillRule="evenodd"
-            d="M12 2.25a.75.75 0 01.75.75v13.19l6.22-6.22a.75.75 0 111.06 1.06l-7.5 7.5a.75.75 0 01-1.06 0l-7.5-7.5a.75.75 0 111.06-1.06l6.22 6.22V3a.75.75 0 01.75-.75z"
-            clipRule="evenodd"
-          />
-        </svg>
-        <p>Mayor a menor</p>
-      </button>
-    </div>
+        <Menu.Items className="absolute right-0 z-20 mt-1 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none py-1">
+          {Object.entries(SORT_LABELS).map(([value, label]) => (
+            <Menu.Item key={value || "recomendado"}>
+              {({ active }) => (
+                <button
+                  onClick={() => setSort(value)}
+                  className={`${
+                    active ? "bg-gray-50" : ""
+                  } flex w-full items-center gap-2 px-4 py-2 text-left text-xs font-light text-gray-700`}
+                >
+                  <CheckIcon
+                    className={`w-4 h-4 text-main ${
+                      currentSort === value ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                  {label}
+                </button>
+              )}
+            </Menu.Item>
+          ))}
+        </Menu.Items>
+      </Transition>
+    </Menu>
   );
 }
 

@@ -4,6 +4,13 @@ import { CheckCircleIcon } from "@heroicons/react/20/solid";
 import Image from "next/image";
 import { Button } from "./Shared";
 import { useRouter } from "next/router";
+import { useListRangeQuery } from "../lib/hooks";
+import RangeSlider from "./RangeSlider";
+
+// Rangos por defecto mientras /api/listRanges responde (o si falla) - solo
+// para que el slider tenga limites razonables desde el primer render.
+const DEFAULT_PRICE_RANGE = { priceMin: 0, priceMax: 100000 };
+const DEFAULT_KM_RANGE = { kmMin: 0, kmMax: 300000 };
 
 function getValue(array, id) {
   return array.find((element) => element.id === id);
@@ -48,10 +55,6 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-function onlyDigits(e) {
-  e.target.value = e.target.value.replace(/\D/g, "");
-}
-
 export default function FiltersSection({ brands, years, buttonTitle, action = "/vehiculos" }) {
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
@@ -71,8 +74,17 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
   const [selectedTraction, setSelectedTraction] = useState("");
   const [selectedDisplacement, setSelectedDisplacement] = useState("");
 
+  const [selectedKmFrom, setSelectedKmFrom] = useState("");
+  const [selectedKmTo, setSelectedKmTo] = useState("");
+
   const [selectedModelos, setSelectedModelos] = useState(null);
   const router = useRouter();
+
+  const { data: ranges } = useListRangeQuery();
+  const priceMin = ranges?.priceMin ?? DEFAULT_PRICE_RANGE.priceMin;
+  const priceMax = ranges?.priceMax ?? DEFAULT_PRICE_RANGE.priceMax;
+  const kmMin = ranges?.kmMin ?? DEFAULT_KM_RANGE.kmMin;
+  const kmMax = ranges?.kmMax ?? DEFAULT_KM_RANGE.kmMax;
 
   // Ordena los años de mayor a menor
   const sortedYears = Array.isArray(years) ? [...years].sort((a, b) => b.year - a.year) : [];
@@ -124,6 +136,22 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
   useEffect(() => {
     if (router.query.kilometers) setSelectedKm(router.query.kilometers);
   }, [router.query.kilometers]);
+
+  useEffect(() => {
+    setSelectedPriceFrom(router.query.priceFrom || "");
+  }, [router.query.priceFrom]);
+
+  useEffect(() => {
+    setSelectedPriceTo(router.query.priceTo || "");
+  }, [router.query.priceTo]);
+
+  useEffect(() => {
+    setSelectedKmFrom(router.query.kmFrom || "");
+  }, [router.query.kmFrom]);
+
+  useEffect(() => {
+    setSelectedKmTo(router.query.kmTo || "");
+  }, [router.query.kmTo]);
 
   useEffect(() => {
     if (router.query.homeMaintenance)
@@ -182,50 +210,20 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
   return (
     <form action={action} method="GET" className="mx-auto w-full">
       <div className="mx-auto w-full max-w-6xl grid gap-x-2 gap-y-2 grid-cols-1 md:grid-cols-4 lg:grid-cols-8 pt-4 pb-6">
-        <div className="col-span-1 md:col-span-1 lg:col-span-2">
-          <div className="flex bg-white">
-            <label htmlFor="priceFrom" className="sr-only">
-              Precio desde
-            </label>
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              id="priceFrom"
-              name="priceFrom"
-              defaultValue={router.query.priceFrom || ""}
-              placeholder="Precio desde"
-              onChange={(e) => {
-                onlyDigits(e);
-                setSelectedPriceFrom(e.target.value);
-              }}
-              className="relative block w-full pl-10 py-3 font-light shadow-lg rounded border-0 focus:z-10 focus:border-main focus:ring-main text-xs"
-            />
-            <PriceIcon />
-          </div>
-        </div>
-
-        <div className="col-span-1 md:col-span-1 lg:col-span-2">
-          <div className="flex bg-white">
-            <label htmlFor="priceTo" className="sr-only">
-              Precio hasta
-            </label>
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              id="priceTo"
-              name="priceTo"
-              defaultValue={router.query.priceTo || ""}
-              placeholder="Precio hasta"
-              onChange={(e) => {
-                onlyDigits(e);
-                setSelectedPriceTo(e.target.value);
-              }}
-              className="relative block w-full pl-10 py-3 font-light shadow-lg rounded border-0 focus:z-10 focus:border-main focus:ring-main text-xs"
-            />
-            <PriceIcon />
-          </div>
+        <div className="col-span-1 md:col-span-2 lg:col-span-4">
+          <RangeSlider
+            label="Precio (USD)"
+            nameFrom="priceFrom"
+            nameTo="priceTo"
+            min={priceMin}
+            max={priceMax}
+            step={100}
+            prefix="$"
+            valueFrom={selectedPriceFrom}
+            valueTo={selectedPriceTo}
+            onChangeFrom={setSelectedPriceFrom}
+            onChangeTo={setSelectedPriceTo}
+          />
         </div>
 
         <div className="col-span-1 md:col-span-1 lg:col-span-2">
@@ -488,44 +486,20 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-1 lg:col-span-2">
-          <div className="flex bg-white">
-            <label htmlFor="kmFrom" className="sr-only">
-              Kilometraje desde
-            </label>
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              id="kmFrom"
-              name="kmFrom"
-              defaultValue={router.query.kmFrom || ""}
-              placeholder="Kilometraje desde"
-              onChange={onlyDigits}
-              className="relative block w-full pl-10 py-3 font-light shadow-lg rounded border-0 focus:z-10 focus:border-main focus:ring-main text-xs"
-            />
-            <KmIcon />
-          </div>
-        </div>
-
-        <div className="col-span-1 md:col-span-1 lg:col-span-2">
-          <div className="flex bg-white">
-            <label htmlFor="kmTo" className="sr-only">
-              Kilometraje hasta
-            </label>
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              id="kmTo"
-              name="kmTo"
-              defaultValue={router.query.kmTo || ""}
-              placeholder="Kilometraje hasta"
-              onChange={onlyDigits}
-              className="relative block w-full pl-10 py-3 font-light shadow-lg rounded border-0 focus:z-10 focus:border-main focus:ring-main text-xs"
-            />
-            <KmIcon />
-          </div>
+        <div className="col-span-1 md:col-span-2 lg:col-span-4">
+          <RangeSlider
+            label="Kilometraje"
+            nameFrom="kmFrom"
+            nameTo="kmTo"
+            min={kmMin}
+            max={kmMax}
+            step={1000}
+            suffix=" km"
+            valueFrom={selectedKmFrom}
+            valueTo={selectedKmTo}
+            onChangeFrom={setSelectedKmFrom}
+            onChangeTo={setSelectedKmTo}
+          />
         </div>
 
         <div className="col-span-1 md:col-span-2 lg:col-span-2">
@@ -809,33 +783,6 @@ function BrandIconInvoice() {
         <line x1="10" y1="38" x2="45" y2="38" stroke="#E53D30" strokeWidth="3"/>
         <line x1="10" y1="51" x2="35" y2="51" stroke="#E53D30" strokeWidth="3"/>
       </g>
-    </svg>
-  );
-}
-
-function PriceIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fillRule="evenodd"
-      strokeLinejoin="round"
-      strokeMiterlimit="2"
-      clipRule="evenodd"
-      viewBox="0 0 225 225"
-      className="w-4 absolute ml-3 mt-3 z-10"
-    >
-      <path
-        fill="#E53D30"
-        fillRule="nonzero"
-        d="M0-.783c-1.913 1.907-3.822 3.819-5.732 5.73l-5.732 5.731c-.745.745-1.586.747-2.326.007l-8.708-8.708c-.752-.752-.749-1.588.008-2.346 3.796-3.796 7.595-7.588 11.383-11.392.468-.469.987-.634 1.637-.575 1.511.138 3.024.238 4.537.354 1.136.088 2.273.168 3.409.268.76.068 1.357.671 1.417 1.429.167 2.097.323 4.196.484 6.294.05.656.104 1.311.147 1.856C.55-1.526.347-1.129 0-.783m1.571-9.636c-.146-1.678-1.45-2.877-3.131-2.993-2.178-.15-4.354-.332-6.531-.503-.425-.034-.85-.081-1.275-.122h-.948c-.03.015-.059.039-.091.044-.7.112-1.285.442-1.783.94-3.857 3.858-7.718 7.714-11.572 11.576-1.323 1.326-1.314 3.257.01 4.583 2.945 2.948 5.891 5.894 8.839 8.839 1.298 1.296 3.249 1.309 4.546.014C-6.497 8.099-2.635 4.232 1.229.368c.346-.346.625-.736.784-1.201.082-.238.136-.485.202-.728v-.895c-.052-.547-.112-1.094-.154-1.642-.165-2.107-.307-4.216-.49-6.321"
-        transform="translate(-6253.72 -4486.71) scale(8.33333) translate(775.195 552.442)"
-      ></path>
-      <path
-        fill="#E53D30"
-        fillRule="nonzero"
-        d="M0 3.032A1.514 1.514 0 11.031.005 1.514 1.514 0 010 3.032m.054-4.714c-1.715-.037-3.208 1.393-3.237 3.101-.029 1.785 1.357 3.263 3.093 3.297 1.813.035 3.274-1.363 3.305-3.165.03-1.747-1.386-3.195-3.161-3.233"
-        transform="translate(-6253.72 -4486.71) scale(8.33333) translate(770.169 544.112)"
-      ></path>
     </svg>
   );
 }
