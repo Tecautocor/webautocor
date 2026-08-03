@@ -18,8 +18,8 @@ import {
   CurrencyDollarIcon,
   CalendarIcon,
   SparklesIcon,
+  TruckIcon,
 } from "@heroicons/react/20/solid";
-import { CarIcon } from "../../components/RangeSlider";
 import { SectionText, Spinner } from "../../components/Shared";
 
 export default function Vehicle() {
@@ -264,8 +264,8 @@ const SORT_OPTIONS = [
   { value: "", label: "Recomendado", Icon: SparklesIcon },
   { value: "price_asc", label: "Menor precio", Icon: CurrencyDollarIcon },
   { value: "price_desc", label: "Mayor precio", Icon: CurrencyDollarIcon },
-  { value: "km_asc", label: "Menor kilometraje", Icon: CarIcon },
-  { value: "km_desc", label: "Mayor kilometraje", Icon: CarIcon },
+  { value: "km_asc", label: "Menor kilometraje", Icon: TruckIcon },
+  { value: "km_desc", label: "Mayor kilometraje", Icon: TruckIcon },
   { value: "year_desc", label: "Año más reciente", Icon: CalendarIcon },
   { value: "year_asc", label: "Año menos reciente", Icon: CalendarIcon },
 ];
