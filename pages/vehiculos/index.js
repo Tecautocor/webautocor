@@ -12,7 +12,14 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { Menu, Transition } from "@headlessui/react";
 import { Fragment } from "react";
-import { CheckIcon, ChevronDownIcon } from "@heroicons/react/20/solid";
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  CurrencyDollarIcon,
+  CalendarIcon,
+  SparklesIcon,
+} from "@heroicons/react/20/solid";
+import { CarIcon } from "../../components/RangeSlider";
 import { SectionText, Spinner } from "../../components/Shared";
 
 export default function Vehicle() {
@@ -253,20 +260,23 @@ function Filters({ tags }) {
   );
 }
 
-const SORT_LABELS = {
-  "": "Recomendado",
-  price_asc: "Menor precio",
-  price_desc: "Mayor precio",
-  km_asc: "Menor kilometraje",
-  km_desc: "Mayor kilometraje",
-  year_desc: "Año más reciente",
-  year_asc: "Año menos reciente",
-};
+const SORT_OPTIONS = [
+  { value: "", label: "Recomendado", Icon: SparklesIcon },
+  { value: "price_asc", label: "Menor precio", Icon: CurrencyDollarIcon },
+  { value: "price_desc", label: "Mayor precio", Icon: CurrencyDollarIcon },
+  { value: "km_asc", label: "Menor kilometraje", Icon: CarIcon },
+  { value: "km_desc", label: "Mayor kilometraje", Icon: CarIcon },
+  { value: "year_desc", label: "Año más reciente", Icon: CalendarIcon },
+  { value: "year_asc", label: "Año menos reciente", Icon: CalendarIcon },
+];
 
 function SortDropdown() {
   const router = useRouter();
   const params = router.query;
   const currentSort = params.sortBy || "";
+  const current =
+    SORT_OPTIONS.find((option) => option.value === currentSort) ||
+    SORT_OPTIONS[0];
 
   const setSort = (value) => {
     const newParams = { ...params, page: 1 };
@@ -285,7 +295,8 @@ function SortDropdown() {
   return (
     <Menu as="div" className="relative shrink-0">
       <Menu.Button className="flex items-center gap-1.5 py-2 px-3 text-xs font-semibold text-gray-600 hover:text-main uppercase">
-        <span>Ordenar: {SORT_LABELS[currentSort]}</span>
+        <current.Icon className="w-4 h-4" />
+        <span>Ordenar: {current.label}</span>
         <ChevronDownIcon className="w-4 h-4" />
       </Menu.Button>
       <Transition
@@ -298,7 +309,7 @@ function SortDropdown() {
         leaveTo="transform opacity-0 scale-95"
       >
         <Menu.Items className="absolute right-0 z-20 mt-1 w-56 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none py-1">
-          {Object.entries(SORT_LABELS).map(([value, label]) => (
+          {SORT_OPTIONS.map(({ value, label, Icon }) => (
             <Menu.Item key={value || "recomendado"}>
               {({ active }) => (
                 <button
@@ -308,10 +319,11 @@ function SortDropdown() {
                   } flex w-full items-center gap-2 px-4 py-2 text-left text-xs font-light text-gray-700`}
                 >
                   <CheckIcon
-                    className={`w-4 h-4 text-main ${
+                    className={`w-4 h-4 shrink-0 text-main ${
                       currentSort === value ? "opacity-100" : "opacity-0"
                     }`}
                   />
+                  <Icon className="w-4 h-4 shrink-0 text-gray-400" />
                   {label}
                 </button>
               )}
