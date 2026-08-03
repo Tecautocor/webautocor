@@ -18,9 +18,21 @@ import {
   CurrencyDollarIcon,
   CalendarIcon,
   SparklesIcon,
-  TruckIcon,
 } from "@heroicons/react/20/solid";
 import { SectionText, Spinner } from "../../components/Shared";
+
+// Heroicons no trae un icono de "auto" (solo TruckIcon, que es un camion de
+// reparto) - silueta propia en un solo trazo, misma grilla 20x20 y mismo
+// peso de linea que el resto de heroicons/20/solid para que quede simetrica
+// con Sparkles/CurrencyDollar/Calendar (ver feedback: el auto detallado de
+// RangeSlider se veia mas saturado a este tamaño).
+function CarSilhouetteIcon({ className = "w-4 h-4" }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="currentColor" className={className}>
+      <path d="M5.63 7.16A2 2 0 0 1 7.5 6h5a2 2 0 0 1 1.87 1.16l.99 2.13c.98.17 1.64 1.06 1.64 2.05v3.16a1 1 0 0 1-1 1h-.5a1.5 1.5 0 0 1-3 0h-5a1.5 1.5 0 0 1-3 0H4a1 1 0 0 1-1-1v-3.16c0-.99.66-1.88 1.64-2.05l.99-2.13Zm.87 2.03h6.99l-.68-1.46a.5.5 0 0 0-.47-.28h-4.7a.5.5 0 0 0-.46.28l-.68 1.46ZM5.5 15a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1Zm9 0a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1Z" />
+    </svg>
+  );
+}
 
 export default function Vehicle() {
   const router = useRouter();
@@ -264,8 +276,8 @@ const SORT_OPTIONS = [
   { value: "", label: "Recomendado", Icon: SparklesIcon },
   { value: "price_asc", label: "Menor precio", Icon: CurrencyDollarIcon },
   { value: "price_desc", label: "Mayor precio", Icon: CurrencyDollarIcon },
-  { value: "km_asc", label: "Menor kilometraje", Icon: TruckIcon },
-  { value: "km_desc", label: "Mayor kilometraje", Icon: TruckIcon },
+  { value: "km_asc", label: "Menor kilometraje", Icon: CarSilhouetteIcon },
+  { value: "km_desc", label: "Mayor kilometraje", Icon: CarSilhouetteIcon },
   { value: "year_desc", label: "Año más reciente", Icon: CalendarIcon },
   { value: "year_asc", label: "Año menos reciente", Icon: CalendarIcon },
 ];
