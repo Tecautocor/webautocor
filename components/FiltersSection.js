@@ -209,8 +209,12 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
 
   return (
     <form action={action} method="GET" className="mx-auto w-full">
-      <div className="mx-auto w-full max-w-6xl grid gap-x-2 gap-y-2 grid-cols-1 md:grid-cols-4 lg:grid-cols-8 pt-4 pb-6">
-        <div className="col-span-1 md:col-span-2 lg:col-span-4">
+      <div className="mx-auto w-full max-w-6xl grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 pt-4 pb-6">
+        {/* Fila de sliders de rango - mismo componente, misma altura, van
+            juntos para no quedar en la misma fila que los dropdowns cortos
+            (eso dejaba un hueco gris grande al lado de estos, ver feedback
+            del usuario sobre la cuadricula desordenada). */}
+        <div className="col-span-1 md:col-span-2">
           <RangeSlider
             label="Precio (USD)"
             nameFrom="priceFrom"
@@ -226,7 +230,25 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
           />
         </div>
 
-        <div className="col-span-1 md:col-span-1 lg:col-span-2">
+        <div className="col-span-1 md:col-span-2">
+          <RangeSlider
+            label="Kilometraje"
+            nameFrom="kmFrom"
+            nameTo="kmTo"
+            min={kmMin}
+            max={kmMax}
+            step={1000}
+            suffix=" km"
+            valueFrom={selectedKmFrom}
+            valueTo={selectedKmTo}
+            onChangeFrom={setSelectedKmFrom}
+            onChangeTo={setSelectedKmTo}
+          />
+        </div>
+
+        {/* Grilla de filtros cortos - todos la misma altura (1 linea),
+            4 columnas en desktop => 3 filas exactas y simetricas. */}
+        <div className="col-span-1">
           <div className="flex bg-white">
             <select
           id="yearFrom"
@@ -246,7 +268,7 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-1 lg:col-span-2">
+        <div className="col-span-1">
           <div className="flex bg-white">
             <select
               id="yearTo"
@@ -266,7 +288,7 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-2 lg:col-span-2">
+        <div className="col-span-1">
           <label htmlFor="brand" className="sr-only">
             Marca
           </label>
@@ -290,7 +312,7 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-2 lg:col-span-2">
+        <div className="col-span-1">
           <label htmlFor="model" className="sr-only">
             Modelo
           </label>
@@ -314,7 +336,7 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-2 lg:col-span-2">
+        <div className="col-span-1">
           <label htmlFor="fuel_name" className="sr-only">
             Combustible
           </label>
@@ -336,7 +358,7 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-2 lg:col-span-2">
+        <div className="col-span-1">
           <label htmlFor="agency" className="sr-only">
             Agencia
           </label>
@@ -360,7 +382,7 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-4 lg:col-span-2">
+        <div className="col-span-1">
           <div className="flex bg-white">
             <div className="flex justify-between px-1 pl-6 py-3 items-center w-full shadow-lg rounded pr-2">
               <label
@@ -383,7 +405,7 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-4 lg:col-span-2">
+        <div className="col-span-1">
           <div className="flex bg-white">
             <div className="flex justify-between px-1 pl-6 py-3 items-center w-full shadow-lg rounded pr-2">
               <label
@@ -406,7 +428,7 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-4 lg:col-span-2">
+        <div className="col-span-1">
           <label htmlFor="saving_plan_order" className="sr-only">
             Transmisión
           </label>
@@ -458,7 +480,7 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
           </div>
         </div> */}
 
-        <div className="col-span-1 md:col-span-4 lg:col-span-2">
+        <div className="col-span-1">
           <label htmlFor="license_plate" className="sr-only">
             Último dígito de placa
           </label>
@@ -486,23 +508,7 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-2 lg:col-span-4">
-          <RangeSlider
-            label="Kilometraje"
-            nameFrom="kmFrom"
-            nameTo="kmTo"
-            min={kmMin}
-            max={kmMax}
-            step={1000}
-            suffix=" km"
-            valueFrom={selectedKmFrom}
-            valueTo={selectedKmTo}
-            onChangeFrom={setSelectedKmFrom}
-            onChangeTo={setSelectedKmTo}
-          />
-        </div>
-
-        <div className="col-span-1 md:col-span-2 lg:col-span-2">
+        <div className="col-span-1">
           <label htmlFor="traction" className="sr-only">
             Tracción
           </label>
@@ -522,7 +528,7 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
           </div>
         </div>
 
-        <div className="col-span-1 md:col-span-2 lg:col-span-2">
+        <div className="col-span-1">
           <label htmlFor="displacement" className="sr-only">
             Cilindraje
           </label>
@@ -614,7 +620,7 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
           </div>
         </div> */}
 
-        <div className="col-span-1 md:col-span-4 lg:col-span-8 bg-white">
+        <div className="col-span-1 md:col-span-2 lg:col-span-4 bg-white">
           <label htmlFor="model" className="sr-only">
             Tipo
           </label>
