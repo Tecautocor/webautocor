@@ -80,6 +80,10 @@ export default function RangeSlider({
   const pctTo = hasRange ? ((to - min) / (max - min)) * 100 : 100;
 
   const format = (v) => `${prefix}${numberFormat.format(v)}${suffix}`;
+  // Muestra el valor con el mismo formato (prefijo/miles/sufijo) que el
+  // placeholder - antes se perdia ($/miles/"km") apenas el usuario escribia
+  // o arrastraba el slider, porque el input mostraba el digito crudo.
+  const displayValue = (v) => (v === "" || v == null ? "" : format(Number(v)));
 
   const handleSlideFrom = (e) => {
     const next = Math.min(Number(e.target.value), to - step);
@@ -102,23 +106,21 @@ export default function RangeSlider({
         <input
           type="text"
           inputMode="numeric"
-          pattern="[0-9]*"
-          name={nameFrom}
-          value={valueFrom ?? ""}
+          value={displayValue(valueFrom)}
           placeholder={hasRange ? format(min) : ""}
           onChange={(e) => onChangeFrom(onlyDigits(e.target.value))}
           className="w-1/2 text-xs font-light border border-gray-300 rounded px-2 py-1.5 focus:border-main focus:ring-main"
         />
+        <input type="hidden" name={nameFrom} value={valueFrom ?? ""} />
         <input
           type="text"
           inputMode="numeric"
-          pattern="[0-9]*"
-          name={nameTo}
-          value={valueTo ?? ""}
+          value={displayValue(valueTo)}
           placeholder={hasRange ? format(max) : ""}
           onChange={(e) => onChangeTo(onlyDigits(e.target.value))}
           className="w-1/2 text-xs font-light border border-gray-300 rounded px-2 py-1.5 focus:border-main focus:ring-main"
         />
+        <input type="hidden" name={nameTo} value={valueTo ?? ""} />
       </div>
 
       {hasRange && (
