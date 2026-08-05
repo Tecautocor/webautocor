@@ -5,6 +5,7 @@ import Image from "next/image";
 import { trackConversion } from "../lib/analytics";
 
 const images = [
+  { src: "/background-compramos-tu-auto.jpg", href: "https://api.whatsapp.com/send/?phone=593987770028&text=Hola%21%20Vengo%20de%20la%20web%20y%20quiero%20vender%20mi%20auto...", external: true },
   { src: "/background1.jpg", href: "https://api.whatsapp.com/send?phone=593999653587&text=Hola%21%20Quiero%20comprar%20un%20seminuevo...", external: true },
   { src: "/background3.jpg", href: "https://api.whatsapp.com/send?phone=593999653587&text=Hola%21%20Quiero%20comprar%20un%20seminuevo...", external: true },
 ];
