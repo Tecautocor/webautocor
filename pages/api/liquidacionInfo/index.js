@@ -1,4 +1,5 @@
 import db from "../../../lib/db";
+import { LIQUIDACION_ACTIVE } from "../../../lib/constants";
 
 export const config = {
   api: {
@@ -9,7 +10,7 @@ export const config = {
 async function handler(req, res) {
   const { license_plate } = req.query;
 
-  if (!license_plate) {
+  if (!license_plate || !LIQUIDACION_ACTIVE) {
     return res.status(200).json({ result: { entitydata: null } });
   }
 

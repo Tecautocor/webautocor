@@ -7,7 +7,6 @@ import Link from "next/link";
 const navigation = [
   { name: "Quiénes somos", href: "/quienes-somos", slug: "about" },
   { name: "Vehículos", href: "/vehiculos", slug: "vehicles" },
-  { name: "Liquidación", href: "/liquidacion", slug: "liquidacion" },
   { name: "Compramos tu auto", href: "/compramos-tu-auto", slug: "buy" },
   {
     name: "Planes de financiamiento",

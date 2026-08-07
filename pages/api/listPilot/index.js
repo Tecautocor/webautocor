@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Prisma } from "@prisma/client";
 import db from "../../../lib/db";
+import { LIQUIDACION_ACTIVE } from "../../../lib/constants";
 
 const perPage = 20;
 
@@ -63,6 +64,19 @@ async function handler(req, res) {
     // Ruta liquidación: filtra por placas aprobadas en tabla LiquidacionVehicle,
     // ordenadas de mayor a menor días en stock
     if (sort === "days_desc") {
+      if (!LIQUIDACION_ACTIVE) {
+        return res.status(200).json({
+          aditional_data: {
+            page: parseInt(page),
+            page_count: 0,
+            rows_count: 0,
+            rows_per_page: perPage,
+            rows_in_page: 0,
+            rows_remaining: 0,
+          },
+          entitydata: [],
+        });
+      }
       try {
         const limitInt = perPage;
         const offsetInt = (parseInt(page) - 1) * perPage;
@@ -170,7 +184,7 @@ async function handler(req, res) {
       // sticker + precio "antes/ahora" en las tarjetas, igual que en /liquidacion).
       const plates = response.map((v) => v.license_plate).filter(Boolean);
       let liqRows = [];
-      if (plates.length > 0) {
+      if (LIQUIDACION_ACTIVE && plates.length > 0) {
         liqRows = await db.$queryRaw`
           SELECT license_plate, stock_value, bono FROM LiquidacionVehicle
           WHERE license_plate IN (${Prisma.join(plates)})
