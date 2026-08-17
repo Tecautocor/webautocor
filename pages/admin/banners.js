@@ -483,12 +483,22 @@ export default function AdminBanners({ userEmail }) {
                     )}
                     {b.href}
                   </div>
-                  <div className="text-xs text-gray-400 mt-0.5 space-x-3">
-                    <span>Subido: {formatDate(b.createdAt, { hour: "2-digit", minute: "2-digit" })}</span>
-                    {b.createdBy && <span>Por: {b.createdBy}</span>}
+                  <div className="text-xs text-gray-400 mt-1 flex flex-col gap-0.5">
+                    <span>
+                      <span className="text-gray-500 font-medium">Subido:</span>{" "}
+                      {formatDate(b.createdAt, { hour: "2-digit", minute: "2-digit" })}
+                      {b.createdBy && (
+                        <>
+                          {" "}
+                          <span className="text-gray-500 font-medium ml-2">Por:</span>{" "}
+                          {b.createdBy}
+                        </>
+                      )}
+                    </span>
                     {(b.startsAt || b.endsAt) && (
                       <span>
-                        Vigencia: {b.startsAt ? formatDate(b.startsAt) : "sin inicio"} —{" "}
+                        <span className="text-gray-500 font-medium">Vigencia:</span>{" "}
+                        {b.startsAt ? formatDate(b.startsAt) : "sin inicio"} —{" "}
                         {b.endsAt ? formatDate(b.endsAt) : "sin fin"}
                       </span>
                     )}
