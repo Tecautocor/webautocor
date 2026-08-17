@@ -10,14 +10,14 @@ export default function AdminLayout({ userEmail, title, children }) {
         <title>Plataforma de administración Web — AUTOCOR</title>
       </Head>
       <header className="bg-white shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/admin" className="flex items-center gap-3">
+        <div className="max-w-5xl mx-auto px-4 py-4 grid grid-cols-3 items-center">
+          <Link href="/admin" className="flex items-center gap-3 justify-self-start">
             <Logo />
-            <span className="font-bold text-gray-800 hidden sm:inline">
-              Plataforma de administración Web
-            </span>
           </Link>
-          <div className="flex items-center gap-4">
+          <span className="text-xl font-bold text-gray-800 text-center hidden sm:block">
+            Plataforma de administración Web
+          </span>
+          <div className="flex items-center gap-4 justify-self-end">
             <span className="text-sm text-gray-500 hidden sm:inline">{userEmail}</span>
             <button
               onClick={() => signOut({ callbackUrl: "/admin/login" })}

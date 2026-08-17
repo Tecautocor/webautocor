@@ -7,6 +7,17 @@ export async function getServerSideProps(context) {
   return requireAdminSession(context);
 }
 
+function formatUploadDate(dateString) {
+  if (!dateString) return "—";
+  return new Date(dateString).toLocaleDateString("es-EC", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function AdminBanners({ userEmail }) {
   const [banners, setBanners] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -251,9 +262,14 @@ export default function AdminBanners({ userEmail }) {
                 <div className="relative w-40 h-14 flex-shrink-0 bg-gray-100">
                   <Image src={b.src} alt="" fill style={{ objectFit: "contain" }} unoptimized />
                 </div>
-                <div className="flex-1 text-sm text-gray-600 truncate">
-                  {i === 0 && <span className="text-main font-semibold mr-2">Principal</span>}
-                  {b.href}
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm text-gray-600 truncate">
+                    {i === 0 && <span className="text-main font-semibold mr-2">Principal</span>}
+                    {b.href}
+                  </div>
+                  <div className="text-xs text-gray-400 mt-0.5">
+                    Subido: {formatUploadDate(b.createdAt)}
+                  </div>
                 </div>
                 {editingId !== b.id && (
                   <div className="flex items-center gap-3 whitespace-nowrap">
