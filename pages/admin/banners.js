@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { requireAdminSession } from "../../lib/adminAuth";
@@ -8,37 +8,64 @@ export async function getServerSideProps(context) {
   return requireAdminSession(context);
 }
 
-function formatUploadDate(dateString) {
+function formatDate(dateString, opts) {
   if (!dateString) return "—";
   return new Date(dateString).toLocaleDateString("es-EC", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+    ...opts,
   });
 }
+
+function toDatetimeLocalValue(dateString) {
+  if (!dateString) return "";
+  const d = new Date(dateString);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
+}
+
+function classifyBanner(b) {
+  const hasSchedule = !!(b.startsAt || b.endsAt);
+  if (!hasSchedule) return "actuales";
+  const now = new Date();
+  if (b.endsAt && now > new Date(b.endsAt)) return "inactivos";
+  return "temporada";
+}
+
+const TABS = [
+  { key: "actuales", label: "Actuales" },
+  { key: "temporada", label: "De temporada" },
+  { key: "inactivos", label: "Inactivos" },
+];
 
 export default function AdminBanners({ userEmail }) {
   const [banners, setBanners] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState("actuales");
+
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [href, setHref] = useState("");
   const [external, setExternal] = useState(true);
+  const [startsAt, setStartsAt] = useState("");
+  const [endsAt, setEndsAt] = useState("");
   const [file, setFile] = useState(null);
   const [fileInputKey, setFileInputKey] = useState(0);
+
   const [editingId, setEditingId] = useState(null);
   const [editHref, setEditHref] = useState("");
   const [editExternal, setEditExternal] = useState(true);
+  const [editStartsAt, setEditStartsAt] = useState("");
+  const [editEndsAt, setEditEndsAt] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   const [editError, setEditError] = useState("");
+
   const [savedOrderIds, setSavedOrderIds] = useState([]);
   const [dragIndex, setDragIndex] = useState(null);
   const [savingOrder, setSavingOrder] = useState(false);
-
-  const orderChanged =
-    banners && banners.map((b) => b.id).join(",") !== savedOrderIds.join(",");
 
   async function loadBanners() {
     setLoading(true);
@@ -54,6 +81,20 @@ export default function AdminBanners({ userEmail }) {
     loadBanners();
   }, []);
 
+  const grouped = useMemo(() => {
+    const g = { actuales: [], temporada: [], inactivos: [] };
+    (banners || []).forEach((b) => g[classifyBanner(b)].push(b));
+    return g;
+  }, [banners]);
+
+  const visibleBanners = grouped[tab] || [];
+  const draggable = tab !== "inactivos";
+
+  const orderChanged =
+    draggable &&
+    visibleBanners.map((b) => b.id).join(",") !==
+      savedOrderIds.filter((id) => visibleBanners.some((b) => b.id === id)).join(",");
+
   async function handleUpload(e) {
     e.preventDefault();
     setError("");
@@ -62,12 +103,18 @@ export default function AdminBanners({ userEmail }) {
       setError("Falta la imagen o el link de destino.");
       return;
     }
+    if (startsAt && endsAt && new Date(startsAt) >= new Date(endsAt)) {
+      setError("La fecha de fin debe ser posterior a la de inicio.");
+      return;
+    }
 
     setUploading(true);
     const formData = new FormData();
     formData.append("image", file);
     formData.append("href", href);
     formData.append("external", external ? "true" : "false");
+    if (startsAt) formData.append("startsAt", startsAt);
+    if (endsAt) formData.append("endsAt", endsAt);
 
     const res = await fetch("/api/admin/banners", {
       method: "POST",
@@ -85,12 +132,14 @@ export default function AdminBanners({ userEmail }) {
     setFile(null);
     setHref("");
     setExternal(true);
+    setStartsAt("");
+    setEndsAt("");
     setFileInputKey((k) => k + 1);
     loadBanners();
   }
 
   async function handleDelete(id) {
-    if (!confirm("¿Eliminar este banner del carrusel del home?")) return;
+    if (!confirm("¿Eliminar este banner? No se puede deshacer.")) return;
     await fetch(`/api/admin/banners/${id}`, { method: "DELETE" });
     loadBanners();
   }
@@ -99,6 +148,8 @@ export default function AdminBanners({ userEmail }) {
     setEditingId(banner.id);
     setEditHref(banner.href);
     setEditExternal(banner.external);
+    setEditStartsAt(toDatetimeLocalValue(banner.startsAt));
+    setEditEndsAt(toDatetimeLocalValue(banner.endsAt));
     setEditError("");
   }
 
@@ -112,12 +163,21 @@ export default function AdminBanners({ userEmail }) {
       setEditError("Falta el link de destino.");
       return;
     }
+    if (editStartsAt && editEndsAt && new Date(editStartsAt) >= new Date(editEndsAt)) {
+      setEditError("La fecha de fin debe ser posterior a la de inicio.");
+      return;
+    }
 
     setSavingEdit(true);
     const res = await fetch(`/api/admin/banners/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ href: editHref.trim(), external: editExternal }),
+      body: JSON.stringify({
+        href: editHref.trim(),
+        external: editExternal,
+        startsAt: editStartsAt || null,
+        endsAt: editEndsAt || null,
+      }),
     });
     setSavingEdit(false);
 
@@ -141,11 +201,16 @@ export default function AdminBanners({ userEmail }) {
 
   function handleDrop(targetIndex) {
     if (dragIndex === null || dragIndex === targetIndex) return;
+
+    const visibleIds = visibleBanners.map((b) => b.id);
+    const [movedId] = visibleIds.splice(dragIndex, 1);
+    visibleIds.splice(targetIndex, 0, movedId);
+
     setBanners((prev) => {
-      const next = [...prev];
-      const [moved] = next.splice(dragIndex, 1);
-      next.splice(targetIndex, 0, moved);
-      return next;
+      const reordered = visibleIds.map((id) => prev.find((b) => b.id === id));
+      let cursor = 0;
+      // conserva el resto de banners (otras pestañas) tal cual, solo reacomoda los visibles entre sí
+      return prev.map((b) => (visibleIds.includes(b.id) ? reordered[cursor++] : b));
     });
     setDragIndex(null);
   }
@@ -170,7 +235,9 @@ export default function AdminBanners({ userEmail }) {
       <form onSubmit={handleUpload} className="bg-white rounded-lg shadow p-6 mb-8">
         <h2 className="font-semibold text-gray-800 mb-1">Subir banner nuevo</h2>
         <p className="text-sm text-gray-500 mb-4">
-          El banner nuevo pasa a ser el primero que se muestra en el carrusel del home.
+          El banner nuevo pasa a ser el primero que se muestra en el carrusel del home. Si dejas
+          las fechas vacías, el banner queda permanente (pestaña &quot;Actuales&quot;); si defines
+          fecha de inicio y/o fin, pasa a &quot;De temporada&quot; y se apaga solo cuando caduque.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
@@ -190,6 +257,26 @@ export default function AdminBanners({ userEmail }) {
               value={href}
               onChange={(e) => setHref(e.target.value)}
               placeholder="https://api.whatsapp.com/send?..."
+              className="w-full border rounded px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">
+              Activo desde (opcional)
+            </label>
+            <input
+              type="datetime-local"
+              value={startsAt}
+              onChange={(e) => setStartsAt(e.target.value)}
+              className="w-full border rounded px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">Activo hasta (opcional)</label>
+            <input
+              type="datetime-local"
+              value={endsAt}
+              onChange={(e) => setEndsAt(e.target.value)}
               className="w-full border rounded px-3 py-2 text-sm"
             />
           </div>
@@ -213,10 +300,32 @@ export default function AdminBanners({ userEmail }) {
       </form>
 
       <div className="bg-white rounded-lg shadow p-6">
+        <div className="flex items-center gap-1 border-b mb-4">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition ${
+                tab === t.key
+                  ? "border-main text-main"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {t.label} ({grouped[t.key]?.length || 0})
+            </button>
+          ))}
+        </div>
+
         <div className="flex items-center justify-between mb-1">
-          <h2 className="font-semibold text-gray-800">Banners actuales</h2>
+          <p className="text-sm text-gray-500">
+            {tab === "actuales" &&
+              "Banners permanentes, siempre visibles en el home mientras no se eliminen."}
+            {tab === "temporada" &&
+              "Banners con fecha de inicio y/o fin — vigentes ahora o programados para el futuro."}
+            {tab === "inactivos" && "Banners de temporada ya vencidos. Quedan como histórico."}
+          </p>
           {orderChanged && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 whitespace-nowrap">
               <button
                 onClick={handleDiscardOrder}
                 className="text-sm text-gray-500 hover:text-gray-700"
@@ -233,45 +342,62 @@ export default function AdminBanners({ userEmail }) {
             </div>
           )}
         </div>
-        <p className="text-sm text-gray-500 mb-4">
-          Arrastra un banner con el ícono ⠿ para cambiar el orden en que aparecen en el home.
-        </p>
-        {loading && <p className="text-gray-500 text-sm">Cargando...</p>}
-        {!loading && banners?.length === 0 && (
-          <p className="text-gray-500 text-sm">No hay banners activos.</p>
+        {draggable && (
+          <p className="text-xs text-gray-400 mb-4">
+            Arrastra un banner con el ícono ⠿ para cambiar el orden en que aparecen en el home.
+          </p>
         )}
-        <div className="space-y-4">
-          {banners?.map((b, i) => (
+
+        {loading && <p className="text-gray-500 text-sm mt-4">Cargando...</p>}
+        {!loading && visibleBanners.length === 0 && (
+          <p className="text-gray-500 text-sm mt-4">No hay banners en esta categoría.</p>
+        )}
+
+        <div className="space-y-4 mt-4">
+          {visibleBanners.map((b, i) => (
             <motion.div
               key={b.id}
               layout
               transition={{ type: "spring", stiffness: 500, damping: 32 }}
-              onDragOver={handleDragOver}
-              onDrop={() => handleDrop(i)}
+              onDragOver={draggable ? handleDragOver : undefined}
+              onDrop={draggable ? () => handleDrop(i) : undefined}
               className={`border rounded-md p-3 bg-white ${dragIndex === i ? "opacity-40" : ""}`}
             >
               <div className="flex items-center gap-4">
-                <span
-                  draggable={editingId === null}
-                  onDragStart={() => handleDragStart(i)}
-                  onDragEnd={() => setDragIndex(null)}
-                  className={`text-xl text-gray-300 select-none flex-shrink-0 ${
-                    editingId === null ? "cursor-grab hover:text-gray-500" : "cursor-not-allowed"
-                  }`}
-                  title="Arrastrar para reordenar"
-                >
-                  ⠿
-                </span>
+                {draggable ? (
+                  <span
+                    draggable={editingId === null}
+                    onDragStart={() => handleDragStart(i)}
+                    onDragEnd={() => setDragIndex(null)}
+                    className={`text-xl text-gray-300 select-none flex-shrink-0 ${
+                      editingId === null ? "cursor-grab hover:text-gray-500" : "cursor-not-allowed"
+                    }`}
+                    title="Arrastrar para reordenar"
+                  >
+                    ⠿
+                  </span>
+                ) : (
+                  <span className="w-5 flex-shrink-0" />
+                )}
                 <div className="relative w-40 h-14 flex-shrink-0 bg-gray-100">
                   <Image src={b.src} alt="" fill style={{ objectFit: "contain" }} unoptimized />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm text-gray-600 truncate">
-                    {i === 0 && <span className="text-main font-semibold mr-2">Principal</span>}
+                    {tab === "actuales" && i === 0 && (
+                      <span className="text-main font-semibold mr-2">Principal</span>
+                    )}
                     {b.href}
                   </div>
-                  <div className="text-xs text-gray-400 mt-0.5">
-                    Subido: {formatUploadDate(b.createdAt)}
+                  <div className="text-xs text-gray-400 mt-0.5 space-x-3">
+                    <span>Subido: {formatDate(b.createdAt, { hour: "2-digit", minute: "2-digit" })}</span>
+                    {b.createdBy && <span>Por: {b.createdBy}</span>}
+                    {(b.startsAt || b.endsAt) && (
+                      <span>
+                        Vigencia: {b.startsAt ? formatDate(b.startsAt) : "sin inicio"} —{" "}
+                        {b.endsAt ? formatDate(b.endsAt) : "sin fin"}
+                      </span>
+                    )}
                   </div>
                 </div>
                 {editingId !== b.id && (
@@ -294,13 +420,41 @@ export default function AdminBanners({ userEmail }) {
 
               {editingId === b.id && (
                 <div className="mt-4 pt-4 border-t">
-                  <label className="block text-sm text-gray-600 mb-1">Link al hacer click</label>
-                  <input
-                    type="text"
-                    value={editHref}
-                    onChange={(e) => setEditHref(e.target.value)}
-                    className="w-full border rounded px-3 py-2 text-sm"
-                  />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="sm:col-span-2">
+                      <label className="block text-sm text-gray-600 mb-1">
+                        Link al hacer click
+                      </label>
+                      <input
+                        type="text"
+                        value={editHref}
+                        onChange={(e) => setEditHref(e.target.value)}
+                        className="w-full border rounded px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">
+                        Activo desde (opcional)
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={editStartsAt}
+                        onChange={(e) => setEditStartsAt(e.target.value)}
+                        className="w-full border rounded px-3 py-2 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">
+                        Activo hasta (opcional)
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={editEndsAt}
+                        onChange={(e) => setEditEndsAt(e.target.value)}
+                        className="w-full border rounded px-3 py-2 text-sm"
+                      />
+                    </div>
+                  </div>
                   <label className="flex items-center gap-2 text-sm text-gray-600 mt-3">
                     <input
                       type="checkbox"

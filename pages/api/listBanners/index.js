@@ -6,7 +6,16 @@ async function handler(req, res) {
   }
 
   try {
-    const banners = await db.banner.findMany({ orderBy: { order: "asc" } });
+    const now = new Date();
+    const banners = await db.banner.findMany({
+      where: {
+        AND: [
+          { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+          { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
+        ],
+      },
+      orderBy: { order: "asc" },
+    });
     return res.status(200).json({ entitydata: banners });
   } catch (err) {
     console.log(err);

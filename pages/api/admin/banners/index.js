@@ -37,12 +37,19 @@ async function handler(req, res) {
       const file = files.image?.[0];
       const href = (fields.href?.[0] || "").trim();
       const external = fields.external?.[0] === "true";
+      const startsAtRaw = fields.startsAt?.[0] || "";
+      const endsAtRaw = fields.endsAt?.[0] || "";
+      const startsAt = startsAtRaw ? new Date(startsAtRaw) : null;
+      const endsAt = endsAtRaw ? new Date(endsAtRaw) : null;
 
       if (!file) {
         return res.status(400).json({ message: "Falta la imagen" });
       }
       if (!href) {
         return res.status(400).json({ message: "Falta el link de destino" });
+      }
+      if (startsAt && endsAt && startsAt >= endsAt) {
+        return res.status(400).json({ message: "La fecha de fin debe ser posterior a la de inicio" });
       }
 
       const ext = path.extname(file.originalFilename || "").toLowerCase();
@@ -63,6 +70,9 @@ async function handler(req, res) {
           href,
           external,
           order: 0,
+          startsAt,
+          endsAt,
+          createdBy: session.user?.email || null,
         },
       });
 
