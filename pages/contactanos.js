@@ -1,6 +1,7 @@
 import Layout from "../components/Layout";
 import Image from "next/image";
 import Maps from "../components/Maps";
+import { useListPhonesQuery } from "../lib/hooks";
 
 const agencias = [
   {
@@ -10,6 +11,7 @@ const agencias = [
     address: "Av. 6 de diciembre SN N61 y Santa Lucia",
     time: "Lunes a Viernes de 08:00 a 18:00, Sábado de 09:00 a 17:00 y Domingo de 10:00 a 14:00",
     location: { latitude: -0.12705068988192195, longitude: -78.47793321363118 },
+    phoneKey: "agencia_matriz",
     phone: "+593 99 965 3587"
   },
   {
@@ -19,6 +21,7 @@ const agencias = [
     address: "Av. Oswaldo Guayasamín",
     time: "Lunes a Viernes de 9:00 a 18:30; Sábado de 09:00 a 17:00 y Domingo de 10:00 a 14:00",
     location: { latitude: -0.20599, longitude: -78.43362 },
+    phoneKey: "agencia_cumbaya",
     phone: "+593 99 043 6699"
   },
   {
@@ -28,6 +31,7 @@ const agencias = [
     address: "Av. De Los Shyris y El Universo E8-40",
     time: "Lunes a Viernes de 08:00 a 18:00, Sábado de 09:00 a 17:00 y Domingo de 10:00 a 14:00",
     location: { latitude: -0.17091753257295517, longitude: -78.48016468479545 },
+    phoneKey: "agencia_shyris",
     phone: "+593 98 300 5861"
   },
   {
@@ -38,6 +42,7 @@ const agencias = [
       "Av. Eloy Alfaro E14 - 65 y Camilo Gallegos, esquina (una cuadra antes de la Av. De los Granados).",
     time: "Lunes a Viernes de 08:00 a 19:00, Sábado de 09:00 a 17:00 y Domingo de 10:00 a 14:00.",
     location: { latitude: -0.16664207649076915, longitude: -78.46845050013835 },
+    phoneKey: "agencia_eloy_alfaro",
     phone: "+593 99 037 4297"
   },
   {
@@ -48,6 +53,7 @@ const agencias = [
       "Av. Francisco de Orellana E4-328 y Enrique Gangotena. Diagonal al Hotel Marriott. Quito, Pichincha",
     time: "Lunes a Viernes de 08:00 a 19:00, Sábado de 09:00 a 17:00 y Domingo de 10:00 a 14:00",
     location: { latitude: -0.19742284789267078, longitude: -78.49054922297624 },
+    phoneKey: "agencia_orellana",
     phone: "+593 99 043 6699"
   },
   {
@@ -57,6 +63,7 @@ const agencias = [
     address: "Av. La Prensa N46-15 y, Zamora, Frente al Tecnologico Cordillera",
     time: "Lunes a Viernes de 08:00 a 18:30, Sábado de 09:00 a 17:00 y Domingo de 10:00 - 14:00",
     location: { latitude: -0.15546, longitude: -78.48885 },
+    phoneKey: "agencia_prensa",
     phone: "+593 99 965 3587"
   },
   {
@@ -66,6 +73,7 @@ const agencias = [
     address: "Av. General Enríquez y San Juan de Dios esquina.",
     time: "Lunes a viernes de 08:00 - 19:00, Sábados de 09:00 - 17:00 y Domingo de 10:00 - 14:00",
     location: { latitude: -0.3049719, longitude: -78.4510271 },
+    phoneKey: "agencia_valle_chillos",
     phone: "+593 99 965 3587"
   },
   {
@@ -75,6 +83,7 @@ const agencias = [
     address: "Av. Pedro Vicente Maldonado",
     time: "Lunes a viernes de 08:00 - 18:00, Sábados de 09:00 - 17:00 y Domingo de 10:00 - 14:00",
     location: { latitude: -0.25916, longitude: -78.52282 },
+    phoneKey: "agencia_sur",
     phone: "+593 99 333 9571"
   },
   {
@@ -84,15 +93,28 @@ const agencias = [
     address: "Av. de las Américas, junto al ingreso del Aeropuerto Jose Joaquin de Olmedo.",
     time: "Lunes a viernes de 08:00 - 18:00, Sábados de 09:00 - 17:00 y Domingo de 10:00 - 14:00",
     location: { latitude: -2.14946, longitude: -79.88602 },
+    phoneKey: "agencia_guayaquil",
     phone: "+593 98 300 5861"
   },
 ];
 
 export default function Contact() {
+  const { data: phonesData } = useListPhonesQuery();
+  const phoneByKey = Object.fromEntries(
+    (phonesData?.entitydata || []).map((p) => [p.key, p.phone])
+  );
+
+  const agenciasConTelefono = agencias.map((a) => ({
+    ...a,
+    phone: phoneByKey[a.phoneKey] || a.phone,
+  }));
+
+  const comprasPhone = phoneByKey["agencia_compras"] || "+593 99 037 4297";
+
   return (
     <Layout selected="contact">
       <div className="bg-gray-50">
-        <Maps agencias={agencias} />
+        <Maps agencias={agenciasConTelefono} comprasPhone={comprasPhone} />
         <div className="bg-gray-50 pb-10 flex-col justify-center items-center px-8">
           <CTA />
         </div>

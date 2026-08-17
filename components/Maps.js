@@ -4,9 +4,10 @@ import "animate.css/animate.min.css";
 import { SectionText } from "../components/Shared";
 import Image from "next/image";
 
-const COMPRAS_PHONE = "+593 99 037 4297";
+const DEFAULT_COMPRAS_PHONE = "+593 99 037 4297";
 
-export default function Maps({ agencias }) {
+export default function Maps({ agencias, comprasPhone }) {
+  const COMPRAS_PHONE = comprasPhone || DEFAULT_COMPRAS_PHONE;
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
   });

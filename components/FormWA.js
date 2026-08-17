@@ -6,9 +6,16 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { trackConversion } from "../lib/analytics";
+import { useListPhonesQuery } from "../lib/hooks";
+
+const DEFAULT_WHATSAPP_PHONE = "593999653587";
 
 export default function FormWA({ time, initialPayment, monthlyPayment, id }) {
   const router = useRouter();
+  const { data: phonesData } = useListPhonesQuery();
+  const whatsappPhone =
+    phonesData?.entitydata?.find((p) => p.key === "whatsapp_general")?.phone ||
+    DEFAULT_WHATSAPP_PHONE;
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -30,7 +37,7 @@ export default function FormWA({ time, initialPayment, monthlyPayment, id }) {
       resetForm();
       trackConversion("whatsapp", "cotizador_vehiculo");
       router.push(
-        "https://api.whatsapp.com/send?phone=593999653587&amp;text=Hola%2C+estoy+interesado"
+        `https://api.whatsapp.com/send?phone=${whatsappPhone}&text=Hola%2C+estoy+interesado`
       );
     } catch (error) {
       setIsLoading(false);

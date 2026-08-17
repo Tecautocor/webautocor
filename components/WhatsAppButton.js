@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import Image from "next/image";
 import { trackConversion } from "../lib/analytics";
+import { useListPhonesQuery } from "../lib/hooks";
+
+const DEFAULT_WHATSAPP_PHONE = "593999653587";
 
 const WhatsAppButton = () => {
+  const { data: phonesData } = useListPhonesQuery();
+  const whatsappPhone =
+    phonesData?.entitydata?.find((p) => p.key === "whatsapp_general")?.phone ||
+    DEFAULT_WHATSAPP_PHONE;
+
   const [showModal, setShowModal] = useState(false);
   const [showMessage, setShowMessage] = useState(false);
   const [name, setName] = useState('');
@@ -42,7 +50,7 @@ const WhatsAppButton = () => {
     const message = `Hola, mi nombre es ${name}. me gustaría información de sus autos que vi en la página web!!`;
 
     // Redirigir a la URL de WhatsApp usando la URL específica
-    const url = `https://api.whatsapp.com/send/?phone=593999653587&text=${encodeURIComponent(message)}&type=phone_number&app_absent=0`;
+    const url = `https://api.whatsapp.com/send/?phone=${whatsappPhone}&text=${encodeURIComponent(message)}&type=phone_number&app_absent=0`;
 
     trackConversion("whatsapp", "boton_flotante");
 

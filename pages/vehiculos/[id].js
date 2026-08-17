@@ -16,6 +16,7 @@ import {
   useGetStockDetailsQuery,
   useGetStockImagesQuery,
   useGetLiquidacionInfoQuery,
+  useListPhonesQuery,
 } from "../../lib/hooks";
 import { SectionText, Spinner, LinkButton } from "../../components/Shared";
 import { calcCuotaXMeses, calcCuota48Meses } from "../../lib/utils";
@@ -34,6 +35,10 @@ export default function Details() {
 
   const licensePlate = data?.result?.entitydata?.license_plate;
   const { data: liqData } = useGetLiquidacionInfoQuery(licensePlate);
+  const { data: phonesData } = useListPhonesQuery();
+  const whatsappPhone =
+    phonesData?.entitydata?.find((p) => p.key === "whatsapp_general")?.phone ||
+    "593999653587";
 
   const rawPrice = data ? Number(data.result.entitydata.prices[0].value) : 0;
   const liq = liqData?.result?.entitydata;
@@ -298,7 +303,7 @@ export default function Details() {
 
                     <button
                       onClick={() => {
-                        const phoneNumber = "593999653587";
+                        const phoneNumber = whatsappPhone;
                         const currentUrl = window.location.href; // Obtiene la URL actual
                         const year = data.result.entitydata.year;
                         const brand = data.result.entitydata.brand;

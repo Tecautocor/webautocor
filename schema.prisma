@@ -21,6 +21,29 @@ model Banner {
   active    Boolean   @default(true)
 }
 
+model Phone {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  label     String
+  category  String
+  phone     String
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}
+
+// Historial de cambios de números telefónicos. Solo se inserta, nunca se
+// actualiza ni se borra desde la app (ningún endpoint expone UPDATE/DELETE
+// para este modelo) - es el registro permanente de quién cambió qué.
+model PhoneChangeLog {
+  id        Int      @id @default(autoincrement())
+  phoneKey  String
+  label     String
+  oldValue  String
+  newValue  String
+  changedBy String
+  changedAt DateTime @default(now())
+}
+
 model Vehicle {
   id_record                  Int       @id @unique(map: "id") @default(autoincrement())
   id                         String?

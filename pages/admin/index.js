@@ -12,6 +12,12 @@ const MODULES = [
     description: "Ver, subir y eliminar los banners del carrusel del home.",
     href: "/admin/banners",
   },
+  {
+    title: "Números telefónicos",
+    description:
+      "WhatsApp del sitio y teléfono de cada agencia, con historial permanente de cambios.",
+    href: "/admin/phones",
+  },
 ];
 
 export default function AdminDashboard({ userEmail }) {
