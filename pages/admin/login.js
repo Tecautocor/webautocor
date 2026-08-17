@@ -2,6 +2,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 import Head from "next/head";
+import { Logo } from "../../components/Shared";
 
 export default function AdminLogin() {
   const { status } = useSession();
@@ -20,6 +21,9 @@ export default function AdminLogin() {
         <title>Panel AUTOCOR</title>
       </Head>
       <div className="bg-white p-10 rounded-lg shadow-md text-center max-w-sm w-full">
+        <div className="flex justify-center mb-4">
+          <Logo />
+        </div>
         <h1 className="text-xl font-bold text-gray-800 mb-1">Panel AUTOCOR</h1>
         <p className="text-gray-500 text-sm mb-6">Administración de banners</p>
         {error && (
