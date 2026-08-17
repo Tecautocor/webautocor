@@ -18,6 +18,7 @@ model Banner {
   startsAt  DateTime?
   endsAt    DateTime?
   createdBy String?
+  active    Boolean   @default(true)
 }
 
 model Vehicle {

@@ -9,6 +9,7 @@ async function handler(req, res) {
     const now = new Date();
     const banners = await db.banner.findMany({
       where: {
+        active: true,
         AND: [
           { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
           { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },

@@ -21,22 +21,29 @@ async function handler(req, res) {
   }
 
   if (req.method === "PATCH") {
-    const href = (req.body?.href || "").trim();
-    const external = !!req.body?.external;
-    const startsAt = req.body?.startsAt ? new Date(req.body.startsAt) : null;
-    const endsAt = req.body?.endsAt ? new Date(req.body.endsAt) : null;
+    const body = req.body || {};
+    const data = {};
 
-    if (!href) {
-      return res.status(400).json({ message: "Falta el link de destino" });
+    if (body.href !== undefined) {
+      const href = String(body.href).trim();
+      if (!href) {
+        return res.status(400).json({ message: "Falta el link de destino" });
+      }
+      data.href = href;
     }
-    if (startsAt && endsAt && startsAt >= endsAt) {
+    if (body.external !== undefined) data.external = !!body.external;
+    if (body.startsAt !== undefined) data.startsAt = body.startsAt ? new Date(body.startsAt) : null;
+    if (body.endsAt !== undefined) data.endsAt = body.endsAt ? new Date(body.endsAt) : null;
+    if (body.active !== undefined) data.active = !!body.active;
+
+    if (data.startsAt && data.endsAt && data.startsAt >= data.endsAt) {
       return res.status(400).json({ message: "La fecha de fin debe ser posterior a la de inicio" });
     }
 
     try {
       const banner = await db.banner.update({
         where: { id: parseInt(id) },
-        data: { href, external, startsAt, endsAt },
+        data,
       });
       return res.status(200).json({ entitydata: banner });
     } catch (err) {

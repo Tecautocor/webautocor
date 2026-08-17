@@ -28,11 +28,20 @@ function toDatetimeLocalValue(dateString) {
 }
 
 function classifyBanner(b) {
+  if (!b.active) return "inactivos";
   const hasSchedule = !!(b.startsAt || b.endsAt);
   if (!hasSchedule) return "actuales";
   const now = new Date();
   if (b.endsAt && now > new Date(b.endsAt)) return "inactivos";
   return "temporada";
+}
+
+const EXPIRING_SOON_DAYS = 3;
+
+function daysUntil(dateString) {
+  if (!dateString) return null;
+  const ms = new Date(dateString).getTime() - Date.now();
+  return Math.ceil(ms / (24 * 60 * 60 * 1000));
 }
 
 const TABS = [
@@ -50,10 +59,13 @@ export default function AdminBanners({ userEmail }) {
   const [error, setError] = useState("");
   const [href, setHref] = useState("");
   const [external, setExternal] = useState(true);
+  const [isTemporal, setIsTemporal] = useState(false);
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
   const [file, setFile] = useState(null);
   const [fileInputKey, setFileInputKey] = useState(0);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [duplicatingId, setDuplicatingId] = useState(null);
 
   const [editingId, setEditingId] = useState(null);
   const [editHref, setEditHref] = useState("");
@@ -81,6 +93,16 @@ export default function AdminBanners({ userEmail }) {
     loadBanners();
   }, []);
 
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
   const grouped = useMemo(() => {
     const g = { actuales: [], temporada: [], inactivos: [] };
     (banners || []).forEach((b) => g[classifyBanner(b)].push(b));
@@ -103,7 +125,11 @@ export default function AdminBanners({ userEmail }) {
       setError("Falta la imagen o el link de destino.");
       return;
     }
-    if (startsAt && endsAt && new Date(startsAt) >= new Date(endsAt)) {
+    if (isTemporal && !startsAt && !endsAt) {
+      setError("Define al menos una fecha de inicio o de fin para un banner de temporada.");
+      return;
+    }
+    if (isTemporal && startsAt && endsAt && new Date(startsAt) >= new Date(endsAt)) {
       setError("La fecha de fin debe ser posterior a la de inicio.");
       return;
     }
@@ -113,8 +139,8 @@ export default function AdminBanners({ userEmail }) {
     formData.append("image", file);
     formData.append("href", href);
     formData.append("external", external ? "true" : "false");
-    if (startsAt) formData.append("startsAt", startsAt);
-    if (endsAt) formData.append("endsAt", endsAt);
+    if (isTemporal && startsAt) formData.append("startsAt", startsAt);
+    if (isTemporal && endsAt) formData.append("endsAt", endsAt);
 
     const res = await fetch("/api/admin/banners", {
       method: "POST",
@@ -132,15 +158,44 @@ export default function AdminBanners({ userEmail }) {
     setFile(null);
     setHref("");
     setExternal(true);
+    setIsTemporal(false);
     setStartsAt("");
     setEndsAt("");
     setFileInputKey((k) => k + 1);
     loadBanners();
   }
 
-  async function handleDelete(id) {
-    if (!confirm("¿Eliminar este banner? No se puede deshacer.")) return;
+  async function handleDeactivate(id) {
+    if (!confirm("¿Desactivar este banner? Deja de mostrarse en el home, pero podrás reactivarlo después desde la pestaña Inactivos."))
+      return;
+    await fetch(`/api/admin/banners/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: false }),
+    });
+    loadBanners();
+  }
+
+  async function handleReactivate(id) {
+    await fetch(`/api/admin/banners/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: true }),
+    });
+    loadBanners();
+  }
+
+  async function handlePermanentDelete(id) {
+    if (!confirm("Esta acción no se puede deshacer. ¿Eliminar este banner permanentemente?"))
+      return;
     await fetch(`/api/admin/banners/${id}`, { method: "DELETE" });
+    loadBanners();
+  }
+
+  async function handleDuplicate(id) {
+    setDuplicatingId(id);
+    await fetch(`/api/admin/banners/${id}/duplicate`, { method: "POST" });
+    setDuplicatingId(null);
     loadBanners();
   }
 
@@ -235,9 +290,10 @@ export default function AdminBanners({ userEmail }) {
       <form onSubmit={handleUpload} className="bg-white rounded-lg shadow p-6 mb-8">
         <h2 className="font-semibold text-gray-800 mb-1">Subir banner nuevo</h2>
         <p className="text-sm text-gray-500 mb-4">
-          El banner nuevo pasa a ser el primero que se muestra en el carrusel del home. Si dejas
-          las fechas vacías, el banner queda permanente (pestaña &quot;Actuales&quot;); si defines
-          fecha de inicio y/o fin, pasa a &quot;De temporada&quot; y se apaga solo cuando caduque.
+          El banner nuevo pasa a ser el primero que se muestra en el carrusel del home. Sin marcar
+          la casilla de temporada queda permanente (pestaña &quot;Actuales&quot;); marcándola y
+          definiendo una fecha de fin, pasa a &quot;De temporada&quot; y se apaga solo cuando
+          caduque.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
@@ -260,27 +316,64 @@ export default function AdminBanners({ userEmail }) {
               className="w-full border rounded px-3 py-2 text-sm"
             />
           </div>
-          <div>
-            <label className="block text-sm text-gray-600 mb-1">
-              Activo desde (opcional)
-            </label>
-            <input
-              type="datetime-local"
-              value={startsAt}
-              onChange={(e) => setStartsAt(e.target.value)}
-              className="w-full border rounded px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-gray-600 mb-1">Activo hasta (opcional)</label>
-            <input
-              type="datetime-local"
-              value={endsAt}
-              onChange={(e) => setEndsAt(e.target.value)}
-              className="w-full border rounded px-3 py-2 text-sm"
-            />
-          </div>
         </div>
+
+        <label className="flex items-center gap-2 text-sm text-gray-600 mt-4">
+          <input
+            type="checkbox"
+            checked={isTemporal}
+            onChange={(e) => {
+              setIsTemporal(e.target.checked);
+              if (!e.target.checked) {
+                setStartsAt("");
+                setEndsAt("");
+              }
+            }}
+          />
+          Banner de temporada / con caducidad (promoción por tiempo limitado)
+        </label>
+
+        {isTemporal && (
+          <div className="grid gap-4 sm:grid-cols-2 mt-3">
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">
+                Activo desde (opcional)
+              </label>
+              <input
+                type="datetime-local"
+                value={startsAt}
+                onChange={(e) => setStartsAt(e.target.value)}
+                className="w-full border rounded px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Activo hasta</label>
+              <input
+                type="datetime-local"
+                value={endsAt}
+                onChange={(e) => setEndsAt(e.target.value)}
+                className="w-full border rounded px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+        )}
+
+        {previewUrl && (
+          <div className="mt-4">
+            <p className="text-sm text-gray-600 mb-2">
+              Vista previa — así se vería en el hero del home:
+            </p>
+            <div className="relative w-full aspect-[3/1] bg-gray-100 rounded-md overflow-hidden border">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewUrl}
+                alt="Vista previa del banner"
+                className="absolute inset-0 w-full h-full object-contain"
+              />
+            </div>
+          </div>
+        )}
+
         <label className="flex items-center gap-2 text-sm text-gray-600 mt-4">
           <input
             type="checkbox"
@@ -300,15 +393,15 @@ export default function AdminBanners({ userEmail }) {
       </form>
 
       <div className="bg-white rounded-lg shadow p-6">
-        <div className="flex items-center gap-1 border-b mb-4">
+        <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg mb-5 w-fit">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition ${
+              className={`px-4 py-2 text-sm font-semibold rounded-md transition ${
                 tab === t.key
-                  ? "border-main text-main"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  ? "bg-main text-white shadow"
+                  : "text-gray-500 hover:text-gray-700"
               }`}
             >
               {t.label} ({grouped[t.key]?.length || 0})
@@ -319,10 +412,11 @@ export default function AdminBanners({ userEmail }) {
         <div className="flex items-center justify-between mb-1">
           <p className="text-sm text-gray-500">
             {tab === "actuales" &&
-              "Banners permanentes, siempre visibles en el home mientras no se eliminen."}
+              "Banners permanentes, siempre visibles en el home mientras no se desactiven."}
             {tab === "temporada" &&
               "Banners con fecha de inicio y/o fin — vigentes ahora o programados para el futuro."}
-            {tab === "inactivos" && "Banners de temporada ya vencidos. Quedan como histórico."}
+            {tab === "inactivos" &&
+              "Banners desactivados o vencidos. Quedan como histórico hasta que se eliminen permanentemente."}
           </p>
           {orderChanged && (
             <div className="flex items-center gap-3 whitespace-nowrap">
@@ -399,6 +493,16 @@ export default function AdminBanners({ userEmail }) {
                       </span>
                     )}
                   </div>
+                  {tab === "temporada" &&
+                    b.endsAt &&
+                    daysUntil(b.endsAt) !== null &&
+                    daysUntil(b.endsAt) <= EXPIRING_SOON_DAYS && (
+                      <span className="inline-block mt-1 text-xs font-semibold text-orange-700 bg-orange-100 px-2 py-0.5 rounded">
+                        {daysUntil(b.endsAt) <= 0
+                          ? "Vence hoy"
+                          : `Vence en ${daysUntil(b.endsAt)} día${daysUntil(b.endsAt) === 1 ? "" : "s"}`}
+                      </span>
+                    )}
                 </div>
                 {editingId !== b.id && (
                   <div className="flex items-center gap-3 whitespace-nowrap">
@@ -409,11 +513,37 @@ export default function AdminBanners({ userEmail }) {
                       Editar
                     </button>
                     <button
-                      onClick={() => handleDelete(b.id)}
-                      className="text-sm text-gray-400 hover:text-main"
+                      onClick={() => handleDuplicate(b.id)}
+                      disabled={duplicatingId === b.id}
+                      className="text-sm text-gray-400 hover:text-main disabled:opacity-50"
                     >
-                      Eliminar
+                      {duplicatingId === b.id ? "Duplicando..." : "Duplicar"}
                     </button>
+                    {tab === "inactivos" ? (
+                      <>
+                        {!b.active && (
+                          <button
+                            onClick={() => handleReactivate(b.id)}
+                            className="text-sm text-gray-400 hover:text-main"
+                          >
+                            Reactivar
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handlePermanentDelete(b.id)}
+                          className="text-sm text-gray-400 hover:text-red-600"
+                        >
+                          Eliminar permanentemente
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => handleDeactivate(b.id)}
+                        className="text-sm text-gray-400 hover:text-main"
+                      >
+                        Desactivar
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
