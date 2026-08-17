@@ -3,6 +3,7 @@ import "../styles/globals.css";
 import AppProvider from "../components/AppProvider";
 import { Montserrat, Poppins } from "next/font/google";
 import Head from "next/head";
+import { SessionProvider } from "next-auth/react";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
@@ -16,15 +17,17 @@ const poppins = Poppins({
   subsets: ["latin"],
 });
 
-function MyApp({ Component, pageProps }) {
+function MyApp({ Component, pageProps: { session, ...pageProps } }) {
   return (
     <div className={`${montserrat.variable} ${poppins.variable}`}>
       <Head>
         <title>AUTOCOR | Siempre nuevos</title>
       </Head>
-      <AppProvider>
-        <Component {...pageProps} />
-      </AppProvider>
+      <SessionProvider session={session}>
+        <AppProvider>
+          <Component {...pageProps} />
+        </AppProvider>
+      </SessionProvider>
     </div>
   );
 }

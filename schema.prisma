@@ -8,6 +8,15 @@ datasource db {
   relationMode = "prisma"
 }
 
+model Banner {
+  id        Int      @id @default(autoincrement())
+  src       String
+  href      String
+  external  Boolean  @default(false)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
 model Vehicle {
   id_record                  Int       @id @unique(map: "id") @default(autoincrement())
   id                         String?

@@ -3,31 +3,35 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { trackConversion } from "../lib/analytics";
-
-const images = [
-  { src: "/background-compramos-tu-auto.jpg", href: "https://api.whatsapp.com/send/?phone=593987770028&text=Hola%21%20Vengo%20de%20la%20web%20y%20quiero%20vender%20mi%20auto...", external: true },
-  { src: "/background1.jpg", href: "https://api.whatsapp.com/send?phone=593999653587&text=Hola%21%20Quiero%20comprar%20un%20seminuevo...", external: true },
-  { src: "/background3.jpg", href: "https://api.whatsapp.com/send?phone=593999653587&text=Hola%21%20Quiero%20comprar%20un%20seminuevo...", external: true },
-];
+import { useListBannersQuery } from "../lib/hooks";
 
 export default function BackgroundCarousel() {
+  const { data } = useListBannersQuery();
+  const images = data?.entitydata || [];
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
+    setCurrent(0);
+  }, [images.length]);
+
+  useEffect(() => {
+    if (images.length < 2) return;
     const interval = setInterval(() => {
       setCurrent((prev) => (prev + 1) % images.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [images.length]);
+
+  if (images.length === 0) return null;
 
   return (
     <div className="absolute inset-0 flex justify-center items-start pt-12">
       <div className="relative w-full max-w-6xl h-full flex justify-center items-center">
 
-        {/* Carrusel de imágenes */}
+        {/* Carrusel de imágenes (fuente: tabla Banner, administrable en /admin/banners) */}
         {images.map((img, index) => (
           <div
-            key={index}
+            key={img.id}
             className={`absolute transition-opacity duration-1000 ${
               index === current ? "opacity-100" : "opacity-0"
             }`}
