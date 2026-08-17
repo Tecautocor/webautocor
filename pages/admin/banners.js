@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { requireAdminSession } from "../../lib/adminAuth";
 import AdminLayout from "../../components/admin/AdminLayout";
 
@@ -241,11 +242,13 @@ export default function AdminBanners({ userEmail }) {
         )}
         <div className="space-y-4">
           {banners?.map((b, i) => (
-            <div
+            <motion.div
               key={b.id}
+              layout
+              transition={{ type: "spring", stiffness: 500, damping: 32 }}
               onDragOver={handleDragOver}
               onDrop={() => handleDrop(i)}
-              className={`border rounded-md p-3 ${dragIndex === i ? "opacity-40" : ""}`}
+              className={`border rounded-md p-3 bg-white ${dragIndex === i ? "opacity-40" : ""}`}
             >
               <div className="flex items-center gap-4">
                 <span
@@ -324,7 +327,7 @@ export default function AdminBanners({ userEmail }) {
                   </div>
                 </div>
               )}
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>
