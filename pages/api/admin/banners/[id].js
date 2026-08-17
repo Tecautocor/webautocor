@@ -20,6 +20,26 @@ async function handler(req, res) {
     }
   }
 
+  if (req.method === "PATCH") {
+    const href = (req.body?.href || "").trim();
+    const external = !!req.body?.external;
+
+    if (!href) {
+      return res.status(400).json({ message: "Falta el link de destino" });
+    }
+
+    try {
+      const banner = await db.banner.update({
+        where: { id: parseInt(id) },
+        data: { href, external },
+      });
+      return res.status(200).json({ entitydata: banner });
+    } catch (err) {
+      console.log(err);
+      return res.status(500).json({ message: "Error al actualizar el banner" });
+    }
+  }
+
   return res.status(404).end();
 }
 
