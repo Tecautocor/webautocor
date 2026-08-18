@@ -63,6 +63,10 @@ model EcuaprimasMatchLog {
   modeloCobertura      Float?
   colorCodigo          String?
   createdAt            DateTime @default(now())
+  numeroCertificado    String?
+  cotizacionEnviada    Boolean  @default(false)
+  enviadoA             String?
+  errorCotizacion      String?
 }
 
 model Vehicle {

@@ -111,15 +111,27 @@ export default function AdminEcuaprimas({ userEmail }) {
                   </div>
                   <div className="text-xs text-gray-400 mt-0.5">{formatDateTime(e.createdAt)}</div>
                 </div>
-                {e.matchOk ? (
-                  <span className="text-xs font-semibold text-green-700 bg-green-100 px-2 py-1 rounded whitespace-nowrap">
-                    Match
-                  </span>
-                ) : (
-                  <span className="text-xs font-semibold text-red-700 bg-red-100 px-2 py-1 rounded whitespace-nowrap">
-                    Sin match
-                  </span>
-                )}
+                <div className="flex flex-col items-end gap-1">
+                  {e.matchOk ? (
+                    <span className="text-xs font-semibold text-green-700 bg-green-100 px-2 py-1 rounded whitespace-nowrap">
+                      Match
+                    </span>
+                  ) : (
+                    <span className="text-xs font-semibold text-red-700 bg-red-100 px-2 py-1 rounded whitespace-nowrap">
+                      Sin match
+                    </span>
+                  )}
+                  {e.matchOk && e.cotizacionEnviada && (
+                    <span className="text-xs font-semibold text-blue-700 bg-blue-100 px-2 py-1 rounded whitespace-nowrap">
+                      Cotización enviada
+                    </span>
+                  )}
+                  {e.matchOk && !e.cotizacionEnviada && e.errorCotizacion && (
+                    <span className="text-xs font-semibold text-orange-700 bg-orange-100 px-2 py-1 rounded whitespace-nowrap">
+                      Cotización falló
+                    </span>
+                  )}
+                </div>
               </div>
               {e.matchOk ? (
                 <div className="text-xs text-gray-500 mt-2">
@@ -127,6 +139,16 @@ export default function AdminEcuaprimas({ userEmail }) {
                   {e.modeloCobertura != null ? `${Math.round(e.modeloCobertura * 100)}%` : "—"} —
                   códigos marca/modelo/color: {e.marcaCodigo}/{e.modeloCodigo}/
                   {e.colorCodigo || "sin color"}
+                  {e.cotizacionEnviada && (
+                    <div className="text-blue-600 mt-1">
+                      Certificado {e.numeroCertificado} — enviado a {e.enviadoA}
+                    </div>
+                  )}
+                  {!e.cotizacionEnviada && e.errorCotizacion && (
+                    <div className="text-orange-600 mt-1">
+                      No se generó la cotización: {e.errorCotizacion}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-xs text-red-600 mt-2">
