@@ -1,4 +1,5 @@
 import { matchVehiculo } from "../../../lib/ecuaprimasCatalogo";
+import db from "../../../lib/db";
 
 export const config = {
   api: {
@@ -29,6 +30,27 @@ async function handler(req, res) {
 
   const match = await matchVehiculo(vehiculo || {});
   console.log("pilotSaleWebhook: resultado match catalogo Ecuaprimas", venta.id, JSON.stringify(match));
+
+  try {
+    await db.ecuaprimasMatchLog.create({
+      data: {
+        ventaId: String(venta.id),
+        marca: vehiculo?.marca || null,
+        modelo: vehiculo?.modelo || null,
+        version: vehiculo?.version || null,
+        color: vehiculo?.color || null,
+        matchOk: match.ok,
+        motivo: match.ok ? null : match.motivo,
+        marcaCodigo: match.ok ? match.marca_codigo : null,
+        modeloCodigo: match.ok ? match.modelo_codigo : null,
+        modeloNombreCatalogo: match.ok ? match.modelo_nombre_catalogo : null,
+        modeloCobertura: match.ok ? match.modelo_cobertura : null,
+        colorCodigo: match.ok ? match.color_codigo : null,
+      },
+    });
+  } catch (err) {
+    console.log("pilotSaleWebhook: error guardando EcuaprimasMatchLog (no bloquea la respuesta)", err);
+  }
 
   // TODO: una vez validado el matching en pruebas reales, llamar a Ecuaprimas
   // (auth + cotizacion) solo cuando match.ok === true. Si match.ok === false,

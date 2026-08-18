@@ -44,6 +44,27 @@ model PhoneChangeLog {
   changedAt DateTime @default(now())
 }
 
+// Un registro por cada venta "APROBADA JEFATURA" que pasa por el matching
+// de catálogo Ecuaprimas (pilotSaleWebhook) - alimenta el tablero de control
+// en /admin/ecuaprimas. No guarda datos del cliente (cédula, teléfono,
+// dirección), solo lo del vehículo y el resultado del match.
+model EcuaprimasMatchLog {
+  id                   Int      @id @default(autoincrement())
+  ventaId              String
+  marca                String?
+  modelo               String?
+  version              String?
+  color                String?
+  matchOk              Boolean
+  motivo               String?
+  marcaCodigo          String?
+  modeloCodigo         String?
+  modeloNombreCatalogo String?
+  modeloCobertura      Float?
+  colorCodigo          String?
+  createdAt            DateTime @default(now())
+}
+
 model Vehicle {
   id_record                  Int       @id @unique(map: "id") @default(autoincrement())
   id                         String?

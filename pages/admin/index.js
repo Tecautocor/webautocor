@@ -18,6 +18,12 @@ const MODULES = [
       "WhatsApp del sitio y teléfono de cada agencia, con historial permanente de cambios.",
     href: "/admin/phones",
   },
+  {
+    title: "Cotizador Seguros (Ecuaprimas)",
+    description:
+      "Tablero de las ventas aprobadas: cuáles matchearon contra el catálogo y cuáles no, con motivo.",
+    href: "/admin/ecuaprimas",
+  },
 ];
 
 export default function AdminDashboard({ userEmail }) {
