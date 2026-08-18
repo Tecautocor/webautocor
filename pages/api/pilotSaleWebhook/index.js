@@ -1,3 +1,5 @@
+import { matchVehiculo } from "../../../lib/ecuaprimasCatalogo";
+
 export const config = {
   api: {
     bodyParser: true,
@@ -25,12 +27,15 @@ async function handler(req, res) {
     return res.status(200).json({ ok: true, procesado: false });
   }
 
-  // TODO: llamar a Ecuaprimas (auth + cotizacion) una vez que tengamos el
-  // catalogo de codigos marca/modelo/color (Catalogos Autocor.xlsx) — sin
-  // eso la cotizacion sale "exitosa" pero con marca/modelo/color incorrectos.
+  const match = await matchVehiculo(vehiculo || {});
+  console.log("pilotSaleWebhook: resultado match catalogo Ecuaprimas", venta.id, JSON.stringify(match));
+
+  // TODO: una vez validado el matching en pruebas reales, llamar a Ecuaprimas
+  // (auth + cotizacion) solo cuando match.ok === true. Si match.ok === false,
+  // no adivinar - dejar la venta pendiente de mapeo manual.
   console.log("pilotSaleWebhook: venta aprobada jefatura, pendiente disparar cotizacion Ecuaprimas", venta.id);
 
-  return res.status(200).json({ ok: true, procesado: true });
+  return res.status(200).json({ ok: true, procesado: true, match });
 }
 
 export default handler;
