@@ -5,6 +5,7 @@ import {
   PhotoIcon,
   PhoneIcon,
   ShieldCheckIcon,
+  ChartBarSquareIcon,
 } from "@heroicons/react/24/outline";
 
 export async function getServerSideProps(context) {
@@ -31,6 +32,13 @@ const MODULES = [
       "Tablero de las ventas aprobadas: cuáles matchearon contra el catálogo y cuáles no, con motivo.",
     href: "/admin/ecuaprimas",
     icon: ShieldCheckIcon,
+  },
+  {
+    title: "Resumen de Inventario",
+    description:
+      "Dashboard en vivo del stock: concentración por modelo, antigüedad, valor y carrocería, con filtros interactivos.",
+    href: "/admin/inventario",
+    icon: ChartBarSquareIcon,
   },
 ];
 
