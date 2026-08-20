@@ -144,6 +144,48 @@ model LeadLog {
   createdAt  DateTime @default(now())
 }
 
+// Carga historica de un export manual de Pilot (CSV "Base compras ventas",
+// el mismo que alimentaba el BI viejo) - tabla SEPARADA de VentaWebhookLog
+// a proposito: es "data de prueba" hasta que se confirme que el mapeo de
+// campos es correcto, no se mezcla con los eventos reales del webhook en
+// vivo. No guarda PII del cliente, mismo criterio que VentaWebhookLog.
+model VentaHistoricoImport {
+  id                        Int       @id @default(autoincrement())
+  ventaId                   String
+  estado                    String?
+  tipoNegocio               String?
+  origen                    String?
+  suborigen                 String?
+  fechaAlta                 DateTime?
+  fechaAprobacion           DateTime?
+  marca                     String?
+  modelo                    String?
+  version                   String?
+  color                     String?
+  precioLista               Float?
+  montoEfectivo             Float?
+  montoFinanciado           Float?
+  montoRetomaUsado          Float?
+  gastosEntrega             Float?
+  totalTransaccion          Float?
+  pctDescuento              Float?
+  descuentoVendedor         Float?
+  descuentoGerente          Float?
+  banco                     String?
+  cuotasFinanciadas         Int?
+  montoCuota                Float?
+  tasaFinanciacion          Float?
+  usadoMarca                String?
+  usadoModelo               String?
+  usadoValorEstimado        Float?
+  usadoCostoReparacion      Float?
+  usadoRentabilidadEstimada Float?
+  vendedorNombre            String?
+  sucursal                  String?
+  comisionVendedor          Float?
+  importedAt                DateTime  @default(now())
+}
+
 model Vehicle {
   id_record                  Int       @id @unique(map: "id") @default(autoincrement())
   id                         String?
