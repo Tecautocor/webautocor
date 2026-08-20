@@ -69,6 +69,51 @@ model EcuaprimasMatchLog {
   errorCotizacion      String?
 }
 
+// Log crudo del webhook de Ventas de Pilot (entidad "Ventas"). Guarda el
+// payload completo tal cual llega (rawPayload) mas un set de campos clave ya
+// tipados para consultar sin parsear JSON. No guarda PII del cliente (cedula,
+// domicilio, conyuge) - solo lo necesario para dashboards gerenciales, mismo
+// criterio que EcuaprimasMatchLog. Los campos tipados se llenan una vez que
+// se conozca la forma real del payload (ver rawPayload de los primeros
+// eventos recibidos) - hasta entonces pueden quedar en null.
+model VentaWebhookLog {
+  id                        Int       @id @default(autoincrement())
+  ventaId                   String?
+  estado                    String?
+  tipoNegocio               String?
+  origen                    String?
+  suborigen                 String?
+  fechaAlta                 DateTime?
+  fechaAprobacion           DateTime?
+  marca                     String?
+  modelo                    String?
+  version                   String?
+  color                     String?
+  precioLista               Float?
+  montoEfectivo             Float?
+  montoFinanciado           Float?
+  montoRetomaUsado          Float?
+  gastosEntrega             Float?
+  totalTransaccion          Float?
+  pctDescuento              Float?
+  descuentoVendedor         Float?
+  descuentoGerente          Float?
+  banco                     String?
+  cuotasFinanciadas         Int?
+  montoCuota                Float?
+  tasaFinanciacion          Float?
+  usadoMarca                String?
+  usadoModelo               String?
+  usadoValorEstimado        Float?
+  usadoCostoReparacion      Float?
+  usadoRentabilidadEstimada Float?
+  vendedorNombre            String?
+  sucursal                  String?
+  comisionVendedor          Float?
+  rawPayload                Json?
+  receivedAt                DateTime  @default(now())
+}
+
 model Vehicle {
   id_record                  Int       @id @unique(map: "id") @default(autoincrement())
   id                         String?
