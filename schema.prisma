@@ -114,6 +114,21 @@ model VentaWebhookLog {
   receivedAt                DateTime  @default(now())
 }
 
+// Meta de unidades a vender por agencia/mes, definida por Gerencia. No sale
+// de ningun sistema (Pilot no tiene un concepto de "presupuesto") - se
+// captura a mano una vez por periodo desde /admin/metas.
+model MetaVentas {
+  id           Int      @id @default(autoincrement())
+  anio         Int
+  mes          Int
+  agencia      String
+  metaUnidades Int
+  updatedAt    DateTime @updatedAt
+  updatedBy    String?
+
+  @@unique([anio, mes, agencia])
+}
+
 model Vehicle {
   id_record                  Int       @id @unique(map: "id") @default(autoincrement())
   id                         String?

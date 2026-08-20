@@ -6,6 +6,8 @@ import {
   PhoneIcon,
   ShieldCheckIcon,
   ChartBarSquareIcon,
+  TrophyIcon,
+  FlagIcon,
 } from "@heroicons/react/24/outline";
 
 export async function getServerSideProps(context) {
@@ -39,6 +41,19 @@ const MODULES = [
       "Dashboard en vivo del stock: concentración por modelo, antigüedad, valor y carrocería, con filtros interactivos.",
     href: "/admin/inventario",
     icon: ChartBarSquareIcon,
+  },
+  {
+    title: "Performance por Agencia",
+    description:
+      "Ventas vs meta por agencia y mes, con ranking de cumplimiento y evolución acumulada.",
+    href: "/admin/performance",
+    icon: TrophyIcon,
+  },
+  {
+    title: "Metas de Ventas",
+    description: "Definir el objetivo mensual de unidades a vender por agencia.",
+    href: "/admin/metas",
+    icon: FlagIcon,
   },
 ];
 
