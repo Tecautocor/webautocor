@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BarChart,
@@ -225,9 +226,9 @@ export default function AdminPerformance({ userEmail }) {
           {metas.length === 0 && (
             <div className="bg-orange-50 text-orange-700 text-sm rounded-lg p-4 mb-6">
               Todavía no hay metas cargadas para {anioActual}. Ve a{" "}
-              <a href="/admin/metas" className="underline font-semibold">
+              <Link href="/admin/metas" className="underline font-semibold">
                 Metas de Ventas
-              </a>{" "}
+              </Link>{" "}
               para definirlas — sin eso, el % de cumplimiento no se puede calcular.
             </div>
           )}
