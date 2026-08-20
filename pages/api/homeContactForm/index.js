@@ -1,4 +1,5 @@
 import axios from "axios";
+import { logLead } from "../../../lib/leadLog";
 
 export const config = {
   api: {
@@ -27,6 +28,15 @@ async function handler(req, res) {
           pilot_notifications_opt_in_consent_flag: aceptaPolitica ? 1 : 0,
           pilot_publicity_opt_in_consent_flag: autorizaDatos ? 1 : 0,
         },
+      });
+
+      logLead({
+        formulario: "home",
+        suborigen: "F5HURZUBKFFQI9WE9",
+        nombre: `${name || ""} ${lastname || ""}`.trim(),
+        email,
+        telefono: phone,
+        ciudad: city,
       });
 
       return res.status(200).json(response.data);

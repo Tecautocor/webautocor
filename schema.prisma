@@ -129,6 +129,21 @@ model MetaVentas {
   @@unique([anio, mes, agencia])
 }
 
+// Registro propio de leads generados por los formularios del sitio (hoy solo
+// se mandan a Pilot via webhooks/welcome.php, sin guardar copia local). Se
+// usa para el dashboard de Embudo de Conversion - arranca a capturar desde
+// que se activa este modelo, no tiene historico previo.
+model LeadLog {
+  id         Int      @id @default(autoincrement())
+  formulario String
+  suborigen  String?
+  nombre     String?
+  email      String?
+  telefono   String?
+  ciudad     String?
+  createdAt  DateTime @default(now())
+}
+
 model Vehicle {
   id_record                  Int       @id @unique(map: "id") @default(autoincrement())
   id                         String?
