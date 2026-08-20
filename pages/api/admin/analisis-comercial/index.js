@@ -12,33 +12,46 @@ async function handler(req, res) {
     return res.status(404).end();
   }
 
-  // Comparativa interanual: solo anios con volumen real (excluye ruido de
-  // fechas mal cargadas en Pilot, ej. un par de filas sueltas en 2004/2010/2019).
+  const anioActual = new Date().getFullYear();
+
+  // Comparativa interanual: ahora usa la carga historica real del CSV de
+  // Pilot (VentaHistoricoImport, estado "Registrado") en vez de la
+  // aproximacion via AllVehicle/Vendido - cubre 2023 en adelante.
   const ventasPorAnioMes = await db.$queryRawUnsafe(
-    `SELECT YEAR(factory_invoicing_dt) AS anio, MONTH(factory_invoicing_dt) AS mes, COUNT(*) AS n
-     FROM AllVehicle
-     WHERE availability_status_code = '3' AND factory_invoicing_dt IS NOT NULL
-       AND YEAR(factory_invoicing_dt) >= 2023
+    `SELECT YEAR(fechaAprobacion) AS anio, MONTH(fechaAprobacion) AS mes, COUNT(*) AS n
+     FROM VentaHistoricoImport
+     WHERE fechaAprobacion IS NOT NULL
      GROUP BY anio, mes
      ORDER BY anio, mes`
   );
 
-  // Vendedores: usa reserved_by_user_name como proxy de quien vendio (no
-  // viene de un campo "vendedor" explicito en Vehicle/AllVehicle) - se
-  // reemplaza por el campo real del webhook (vendedorNombre) cuando haya
-  // datos acumulados.
+  // Vendedores: SOLO el anio en curso (a proposito - un ranking con todo el
+  // historico mezclaria vendedores que ya no trabajan ahi con el equipo
+  // actual). Usa el nombre real de vendedor de la carga historica.
   const porVendedor = await db.$queryRawUnsafe(
-    `SELECT reserved_by_user_name AS vendedor, owner_branch_code AS agencia, COUNT(*) AS n
-     FROM AllVehicle
-     WHERE availability_status_code = '3' AND factory_invoicing_dt IS NOT NULL
-       AND YEAR(factory_invoicing_dt) = YEAR(CURDATE())
-       AND reserved_by_user_name IS NOT NULL AND reserved_by_user_name != ''
+    `SELECT vendedorNombre AS vendedor, sucursal AS agencia, COUNT(*) AS n
+     FROM VentaHistoricoImport
+     WHERE YEAR(fechaAprobacion) = ?
+       AND vendedorNombre IS NOT NULL AND vendedorNombre != ''
      GROUP BY vendedor, agencia
      ORDER BY n DESC
-     LIMIT 30`
+     LIMIT 30`,
+    anioActual
   );
 
-  const rentabilidad = await db.ventaWebhookLog.findMany({
+  // Rentabilidad: baseline historico (para tener con que comparar) + eventos
+  // reales en vivo del webhook (VentaWebhookLog) que se van acumulando desde
+  // que se activo la regla en Pilot.
+  const historicoAgg = await db.$queryRawUnsafe(
+    `SELECT COUNT(*) AS n,
+            AVG(pctDescuento) AS descuentoProm,
+            SUM(CASE WHEN montoFinanciado > 0 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pctFinanciadas,
+            AVG(NULLIF(usadoRentabilidadEstimada, 0)) AS usadoRentabilidadProm,
+            AVG(totalTransaccion) AS ticketPromedio
+     FROM VentaHistoricoImport`
+  );
+
+  const enVivo = await db.ventaWebhookLog.findMany({
     where: { estado: "Registrado" },
     select: {
       ventaId: true,
@@ -59,10 +72,20 @@ async function handler(req, res) {
     take: 500,
   });
 
+  const h = historicoAgg[0];
+
   return res.status(200).json({
+    anioActual,
     ventasPorAnioMes: ventasPorAnioMes.map((r) => ({ anio: Number(r.anio), mes: Number(r.mes), n: Number(r.n) })),
     porVendedor: porVendedor.map((r) => ({ vendedor: r.vendedor, agencia: r.agencia, n: Number(r.n) })),
-    rentabilidad,
+    rentabilidadHistorico: {
+      n: Number(h.n),
+      descuentoProm: h.descuentoProm !== null ? Number(h.descuentoProm) : null,
+      pctFinanciadas: h.pctFinanciadas !== null ? Number(h.pctFinanciadas) : null,
+      usadoRentabilidadProm: h.usadoRentabilidadProm !== null ? Number(h.usadoRentabilidadProm) : null,
+      ticketPromedio: h.ticketPromedio !== null ? Number(h.ticketPromedio) : null,
+    },
+    rentabilidadEnVivo: enVivo,
   });
 }
 

@@ -81,21 +81,20 @@ export default function AdminAnalisisComercial({ userEmail }) {
     return { anioActual, anioAnterior, actual, anterior, pct: anterior ? ((actual - anterior) / anterior) * 100 : 0 };
   }, [data, anios]);
 
-  const rentabilidad = data?.rentabilidad || [];
-  const rentKpis = useMemo(() => {
-    if (rentabilidad.length === 0) return null;
-    const n = rentabilidad.length;
-    const avg = (key) => rentabilidad.reduce((s, r) => s + (r[key] || 0), 0) / n;
-    const financiadas = rentabilidad.filter((r) => (r.montoFinanciado || 0) > 0).length;
+  const rentabilidadEnVivo = data?.rentabilidadEnVivo || [];
+  const rentHistorico = data?.rentabilidadHistorico || null;
+  const enVivoKpis = useMemo(() => {
+    if (rentabilidadEnVivo.length === 0) return null;
+    const n = rentabilidadEnVivo.length;
+    const avg = (key) => rentabilidadEnVivo.reduce((s, r) => s + (r[key] || 0), 0) / n;
+    const financiadas = rentabilidadEnVivo.filter((r) => (r.montoFinanciado || 0) > 0).length;
     return {
       n,
       descuentoVendedorProm: avg("descuentoVendedor"),
       descuentoGerenteProm: avg("descuentoGerente"),
       pctFinanciadas: (financiadas / n) * 100,
-      utilidadRetomaProm: avg("usadoRentabilidadEstimada"),
-      comisionProm: avg("comisionVendedor"),
     };
-  }, [rentabilidad]);
+  }, [rentabilidadEnVivo]);
 
   return (
     <AdminLayout userEmail={userEmail} title="Análisis Comercial">
@@ -136,7 +135,16 @@ export default function AdminAnalisisComercial({ userEmail }) {
                 )}
                 <div className="bg-white rounded-xl shadow-sm p-5">
                   <h3 className="font-semibold text-gray-800 mb-1">Ventas cerradas por mes, comparado año a año</h3>
-                  <p className="text-xs text-gray-400 mb-2">Fuente: AllVehicle (estado Vendido) — desde 2023</p>
+                  <p className="text-xs text-gray-400 mb-2">
+                    Fuente: carga histórica real de Pilot (ventas estado &quot;Registrado&quot;) — desde 2023
+                  </p>
+                  {anios.includes(new Date().getFullYear()) && (
+                    <p className="text-xs text-orange-500 mb-2">
+                      Ojo: {new Date().getFullYear()} tiene un hueco conocido entre marzo (corte del
+                      último export histórico) y agosto (activación del webhook en vivo) — la línea
+                      conecta visualmente ese tramo, pero no son datos reales de esos meses.
+                    </p>
+                  )}
                   <ResponsiveContainer width="100%" height={340}>
                     <LineChart data={interanualData}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -164,14 +172,15 @@ export default function AdminAnalisisComercial({ userEmail }) {
 
             {tab === "vendedores" && (
               <motion.div key="vendedores" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <div className="bg-orange-50 text-orange-700 text-sm rounded-lg p-4 mb-4">
-                  Esto usa el usuario que <b>reservó la unidad</b> en el sistema como aproximación de
-                  quién vendió — no es un campo explícito de &quot;vendedor&quot; en el stock. En cuanto se
-                  acumulen datos del webhook de Ventas (que sí trae el vendedor real de cada
-                  operación), esto se reemplaza por ese dato exacto.
+                <div className="bg-blue-50 text-blue-700 text-sm rounded-lg p-4 mb-4">
+                  Nombre real del vendedor (carga histórica de Pilot) — acotado a solo{" "}
+                  <b>{data?.anioActual}</b> a propósito, para no mezclar en el ranking a alguien que ya
+                  no trabaja en la empresa con el equipo actual. Ojo: hoy esto solo cubre
+                  enero–marzo {data?.anioActual} (el corte del último export) — falta abril en
+                  adelante hasta que se acumulen más eventos del webhook en vivo.
                 </div>
                 <div className="bg-white rounded-xl shadow-sm p-5">
-                  <h3 className="font-semibold text-gray-800 mb-3">Ranking por unidades (año en curso)</h3>
+                  <h3 className="font-semibold text-gray-800 mb-3">Ranking por unidades ({data?.anioActual})</h3>
                   <ResponsiveContainer width="100%" height={500}>
                     <BarChart data={data?.porVendedor || []} layout="vertical" margin={{ left: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" horizontal={false} />
@@ -187,33 +196,69 @@ export default function AdminAnalisisComercial({ userEmail }) {
 
             {tab === "rentabilidad" && (
               <motion.div key="rentabilidad" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                {!rentKpis ? (
+                {rentHistorico && (
+                  <>
+                    <h3 className="text-sm font-semibold text-gray-500 mb-2">
+                      Histórico (2023–{data?.anioActual}, carga de Pilot)
+                    </h3>
+                    <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-6">
+                      <div className="bg-white rounded-xl shadow-sm p-5">
+                        <div className="text-2xl font-bold text-gray-800">{rentHistorico.n.toLocaleString("es-EC")}</div>
+                        <div className="text-xs text-gray-500">Ventas registradas</div>
+                      </div>
+                      <div className="bg-white rounded-xl shadow-sm p-5">
+                        <div className="text-2xl font-bold text-gray-800">
+                          {rentHistorico.descuentoProm !== null ? rentHistorico.descuentoProm.toFixed(2) + "%" : "—"}
+                        </div>
+                        <div className="text-xs text-gray-500">Descuento promedio</div>
+                      </div>
+                      <div className="bg-white rounded-xl shadow-sm p-5">
+                        <div className="text-2xl font-bold text-gray-800">
+                          {rentHistorico.pctFinanciadas !== null ? rentHistorico.pctFinanciadas.toFixed(1) + "%" : "—"}
+                        </div>
+                        <div className="text-xs text-gray-500">Ventas financiadas</div>
+                      </div>
+                      <div className="bg-white rounded-xl shadow-sm p-5">
+                        <div className="text-2xl font-bold text-gray-800">{currency(rentHistorico.ticketPromedio)}</div>
+                        <div className="text-xs text-gray-500">Ticket promedio</div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-400 -mt-4 mb-6">
+                      El detalle de descuento autorizado por vendedor/gerente y comisión no está
+                      confiablemente poblado en la carga histórica — esos dos solo van a tener datos
+                      reales a partir del webhook en vivo.
+                    </p>
+                  </>
+                )}
+
+                <h3 className="text-sm font-semibold text-gray-500 mb-2">En vivo (webhook de Pilot)</h3>
+                {!enVivoKpis ? (
                   <div className="bg-white rounded-xl shadow-sm p-10 text-center">
                     <BanknotesIcon className="h-10 w-10 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-500 text-sm max-w-md mx-auto">
-                      Todavía no hay datos reales del webhook de Ventas (esperando que la primera
-                      venta pase a estado <b>&quot;Registrado&quot;</b> en Pilot). En cuanto lleguen los
-                      primeros eventos, esta sección se llena sola con descuentos, financiamiento y
-                      rentabilidad de retomas.
+                      Todavía no hay eventos reales del webhook de Ventas (esperando que la primera
+                      venta pase a estado <b>&quot;Registrado&quot;</b> en Pilot desde que se activó la
+                      regla). En cuanto lleguen, aquí se ve el detalle exacto de descuentos por
+                      vendedor/gerente y comisión que el histórico no tiene.
                     </p>
                   </div>
                 ) : (
                   <>
                     <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-4">
                       <div className="bg-white rounded-xl shadow-sm p-5">
-                        <div className="text-2xl font-bold text-gray-800">{rentKpis.n}</div>
+                        <div className="text-2xl font-bold text-gray-800">{enVivoKpis.n}</div>
                         <div className="text-xs text-gray-500">Ventas registradas</div>
                       </div>
                       <div className="bg-white rounded-xl shadow-sm p-5">
-                        <div className="text-2xl font-bold text-gray-800">{currency(rentKpis.descuentoVendedorProm)}</div>
+                        <div className="text-2xl font-bold text-gray-800">{currency(enVivoKpis.descuentoVendedorProm)}</div>
                         <div className="text-xs text-gray-500">Descuento prom. (vendedor)</div>
                       </div>
                       <div className="bg-white rounded-xl shadow-sm p-5">
-                        <div className="text-2xl font-bold text-gray-800">{currency(rentKpis.descuentoGerenteProm)}</div>
+                        <div className="text-2xl font-bold text-gray-800">{currency(enVivoKpis.descuentoGerenteProm)}</div>
                         <div className="text-xs text-gray-500">Descuento prom. (gerente)</div>
                       </div>
                       <div className="bg-white rounded-xl shadow-sm p-5">
-                        <div className="text-2xl font-bold text-gray-800">{rentKpis.pctFinanciadas.toFixed(0)}%</div>
+                        <div className="text-2xl font-bold text-gray-800">{enVivoKpis.pctFinanciadas.toFixed(0)}%</div>
                         <div className="text-xs text-gray-500">Ventas financiadas</div>
                       </div>
                     </div>
@@ -231,7 +276,7 @@ export default function AdminAnalisisComercial({ userEmail }) {
                           </tr>
                         </thead>
                         <tbody>
-                          {rentabilidad.slice(0, 30).map((r) => (
+                          {rentabilidadEnVivo.slice(0, 30).map((r) => (
                             <tr key={r.ventaId} className="border-b last:border-0">
                               <td className="py-1.5 pr-2">{r.ventaId}</td>
                               <td className="py-1.5 pr-2">{r.sucursal || "—"}</td>
