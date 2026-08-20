@@ -6,9 +6,12 @@ export const config = {
   },
 };
 
+// Pilot manda numeros en formato latino: punto = miles, coma = decimal
+// (ej. "15.900,00"). Sin esto, parseFloat lee mal la coma y arruina el monto.
 function num(v) {
   if (v === null || v === undefined || v === "") return null;
-  const n = parseFloat(String(v).replace(/[^0-9.-]/g, ""));
+  const s = String(v).trim().replace(/\./g, "").replace(",", ".");
+  const n = parseFloat(s.replace(/[^0-9.-]/g, ""));
   return Number.isFinite(n) ? n : null;
 }
 
@@ -17,9 +20,18 @@ function int(v) {
   return n === null ? null : Math.trunc(n);
 }
 
+// Pilot manda fechas como "DD/MM/YYYY" - new Date() nativo asume MM/DD/YYYY
+// y falla (o interpreta mal) con dia > 12, hay que parsear explicito.
 function date(v) {
   if (!v) return null;
-  const d = new Date(v);
+  const s = String(v).trim();
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) {
+    const [, day, month, year] = m;
+    const d = new Date(Date.UTC(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10)));
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const d = new Date(s);
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
