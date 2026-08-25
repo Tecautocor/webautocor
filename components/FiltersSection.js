@@ -655,6 +655,7 @@ export default function FiltersSection({ brands, years, buttonTitle, action = "/
                               src={"/" + modelo.image}
                               width={150}
                               height={63}
+                              unoptimized
                             />
                             <RadioGroup.Description
                               as="span"

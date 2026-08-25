@@ -44,6 +44,7 @@ export default function BackgroundCarousel() {
               style={{ objectFit: "contain", objectPosition: "center" }}
               sizes="100vw"
               priority={index === 0}
+              unoptimized
             />
           </div>
         ))}
