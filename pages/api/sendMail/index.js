@@ -1,6 +1,6 @@
-import nodemailer from 'nodemailer';
 import formidable from 'formidable';
 import fs from 'fs';
+import { sendMailGraph } from '../../../lib/graphMail';
 
 export const config = {
   api: {
@@ -20,16 +20,6 @@ async function handler(req, res) {
         if (err) reject(err);
         else resolve([fields, files]);
       });
-    });
-
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD,
-      },
     });
 
     const emailContent = `
@@ -129,19 +119,19 @@ async function handler(req, res) {
     // Prepare attachments
     const attachments = [];
     if (files.resume) {
+      const resumeFile = files.resume[0];
       attachments.push({
-        filename: files.resume[0].originalFilename,
-        content: fs.createReadStream(files.resume[0].filepath),
-        contentType: files.resume[0].mimetype
+        filename: resumeFile.originalFilename,
+        contentType: resumeFile.mimetype,
+        buffer: fs.readFileSync(resumeFile.filepath),
       });
     }
 
-    const info = await transporter.sendMail({
-      from: `"Formulario de Aplicación" <${process.env.FROM_EMAIL}>`,
+    await sendMailGraph({
       to: process.env.TO_EMAIL,
       subject: `Nueva aplicación para ${fields.position}`,
       html: emailContent,
-      attachments: attachments
+      attachments,
     });
 
     // Clean up: Delete the temporary file
@@ -151,7 +141,7 @@ async function handler(req, res) {
       });
     }
 
-    console.log('Message sent: %s', info.messageId);
+    console.log('Message sent to', process.env.TO_EMAIL);
     res.status(200).json({ success: true });
   } catch (error) {
     console.error('Error sending email:', error);
@@ -160,4 +150,3 @@ async function handler(req, res) {
 }
 
 export default handler;
-
