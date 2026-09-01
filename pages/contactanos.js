@@ -80,9 +80,9 @@ const agencias = [
     id: 8,
     src: "/autocor-local-sur.jpg",
     name: "Autocor Sur",
-    address: "Av. Pedro Vicente Maldonado",
+    address: "Av. Morán Valverde y Llira Ñan, 170606 Quito, Frente al Quicentro Sur",
     time: "Lunes a viernes de 08:00 - 18:00, Sábados de 09:00 - 17:00 y Domingo de 10:00 - 14:00",
-    location: { latitude: -0.25916, longitude: -78.52282 },
+    location: { latitude: -0.2853, longitude: -78.5438 },
     phoneKey: "agencia_sur",
     phone: "+593 99 333 9571"
   },
