@@ -1,4 +1,5 @@
 import axios from "axios";
+import { logLead } from "../../../lib/leadLog";
 
 export const config = {
   api: {
@@ -36,6 +37,15 @@ async function handler(req, res) {
             ", year: " +
             year,
         },
+      });
+
+      logLead({
+        formulario: "buy",
+        suborigen: "ESDR4JXUIH7Y797BK",
+        nombre: `${name || ""} ${lastname || ""}`.trim(),
+        email,
+        telefono: phone,
+        ciudad: city,
       });
 
       return res.status(200).json(response.data);

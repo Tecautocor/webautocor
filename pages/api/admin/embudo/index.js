@@ -7,6 +7,7 @@ const FORMULARIO_LABELS = {
   reserve: "Reservar auto",
   wa: "WhatsApp (auto)",
   budget: "Cotizador de presupuesto",
+  buy: "Vende tu auto",
 };
 
 async function handler(req, res) {

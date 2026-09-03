@@ -28,7 +28,7 @@ export async function getServerSideProps(context) {
 }
 
 const MESES_LABEL = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-const COLORES_FORM = ["#e43d30", "#1d4ed8", "#0891b2", "#7c3aed"];
+const COLORES_FORM = ["#e43d30", "#1d4ed8", "#0891b2", "#7c3aed", "#ca8a04"];
 
 function EtapaCard({ icon: Icon, label, value, real, delay, format }) {
   return (
