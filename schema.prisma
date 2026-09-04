@@ -63,6 +63,23 @@ model PhoneChangeLog {
   changedAt DateTime @default(now())
 }
 
+// Catálogo propio de marcas/modelos de Ecuaprimas (tipo="marca"/"modelo", ligado
+// por parent_codigo) usado por el matching de pilotSaleWebhook - existía en la
+// base desde antes como tabla creada por SQL directo, sin declarar aquí; se
+// agrega ahora solo para reflejar la realidad y que `prisma db push` no la
+// vea como "sobrante" y proponga borrarla. Índices tal cual estaban en la BD.
+model EcuaprimasCatalogo {
+  id                 Int    @id @default(autoincrement())
+  tipo               String @db.VarChar(20)
+  codigo             Int?
+  nombre             String
+  nombre_normalizado String
+  parent_codigo      Int?
+
+  @@index([tipo, codigo, parent_codigo], map: "idx_codigo")
+  @@index([tipo, parent_codigo, nombre_normalizado], map: "idx_lookup")
+}
+
 // Un registro por cada venta "APROBADA JEFATURA" que pasa por el matching
 // de catálogo Ecuaprimas (pilotSaleWebhook) - alimenta el tablero de control
 // en /admin/ecuaprimas. No guarda datos del cliente (cédula, teléfono,
@@ -203,6 +220,17 @@ model VentaHistoricoImport {
   sucursal                  String?
   comisionVendedor          Float?
   importedAt                DateTime  @default(now())
+}
+
+// Lista curada de vehículos para la página /liquidacion - un JOIN con Vehicle
+// por license_plate (ver sección 6 de Acceso y Credenciales/CONTEXTO_PROYECTO.md).
+// Igual que EcuaprimasCatalogo, existía en la base creada por SQL directo sin
+// declarar aquí; se agrega solo para que el schema refleje la realidad.
+model LiquidacionVehicle {
+  license_plate String    @id @db.VarChar(20)
+  added_at      DateTime? @default(now()) @db.Timestamp(0)
+  stock_value   Decimal?  @db.Decimal(10, 2)
+  bono          Decimal?  @db.Decimal(10, 2)
 }
 
 model Vehicle {
