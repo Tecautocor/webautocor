@@ -18,48 +18,58 @@ function formatDateTime(dateString) {
   });
 }
 
-function emptyForm() {
-  return {
-    name: "",
-    address: "",
-    time: "",
-    latitude: "",
-    longitude: "",
-    phone: "",
-  };
+function emptyAgencyForm() {
+  return { name: "", address: "", time: "", latitude: "", longitude: "", phone: "" };
 }
 
-export default function AdminAgencies({ userEmail }) {
+const CATEGORY_LABELS = {
+  whatsapp: "WhatsApp",
+};
+
+export default function AdminContenido({ userEmail }) {
   const [agencies, setAgencies] = useState(null);
   const [phones, setPhones] = useState(null);
+  const [log, setLog] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // --- Agencias: alta nueva ---
   const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState(emptyForm());
+  const [createForm, setCreateForm] = useState(emptyAgencyForm());
   const [createFile, setCreateFile] = useState(null);
   const [createFileKey, setCreateFileKey] = useState(0);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
 
-  const [editingId, setEditingId] = useState(null);
-  const [editForm, setEditForm] = useState(emptyForm());
-  const [editFile, setEditFile] = useState(null);
-  const [editFileKey, setEditFileKey] = useState(0);
-  const [savingEdit, setSavingEdit] = useState(false);
-  const [editError, setEditError] = useState("");
-
+  // --- Agencias: edición ---
+  const [editingAgencyId, setEditingAgencyId] = useState(null);
+  const [editAgencyForm, setEditAgencyForm] = useState(emptyAgencyForm());
+  const [editAgencyFile, setEditAgencyFile] = useState(null);
+  const [editAgencyFileKey, setEditAgencyFileKey] = useState(0);
+  const [savingAgencyEdit, setSavingAgencyEdit] = useState(false);
+  const [agencyEditError, setAgencyEditError] = useState("");
   const [savingPhoneId, setSavingPhoneId] = useState(null);
+
+  // --- Números generales (WhatsApp, etc.) ---
+  const [editingPhoneId, setEditingPhoneId] = useState(null);
+  const [editPhoneValue, setEditPhoneValue] = useState("");
+  const [savingPhoneEdit, setSavingPhoneEdit] = useState(false);
+  const [phoneEditError, setPhoneEditError] = useState("");
 
   async function loadAll() {
     setLoading(true);
-    const [agRes, phRes] = await Promise.all([
+    const [agRes, phRes, logRes] = await Promise.all([
       fetch("/api/admin/agencies"),
       fetch("/api/admin/phones"),
+      fetch("/api/admin/phones/log"),
     ]);
-    const agData = await agRes.json();
-    const phData = await phRes.json();
+    const [agData, phData, logData] = await Promise.all([
+      agRes.json(),
+      phRes.json(),
+      logRes.json(),
+    ]);
     setAgencies(agData.entitydata || []);
     setPhones(phData.entitydata || []);
+    setLog(logData.entitydata || []);
     setLoading(false);
   }
 
@@ -72,6 +82,19 @@ export default function AdminAgencies({ userEmail }) {
     [phones]
   );
 
+  const generalGrouped = useMemo(
+    () =>
+      (phones || [])
+        .filter((p) => p.category !== "agencia")
+        .reduce((acc, p) => {
+          acc[p.category] = acc[p.category] || [];
+          acc[p.category].push(p);
+          return acc;
+        }, {}),
+    [phones]
+  );
+
+  // --- Agencias: crear ---
   async function handleCreate(e) {
     e.preventDefault();
     setCreateError("");
@@ -104,16 +127,17 @@ export default function AdminAgencies({ userEmail }) {
       return;
     }
 
-    setCreateForm(emptyForm());
+    setCreateForm(emptyAgencyForm());
     setCreateFile(null);
     setCreateFileKey((k) => k + 1);
     setShowCreate(false);
     loadAll();
   }
 
-  function startEdit(a) {
-    setEditingId(a.id);
-    setEditForm({
+  // --- Agencias: editar ---
+  function startEditAgency(a) {
+    setEditingAgencyId(a.id);
+    setEditAgencyForm({
       name: a.name,
       address: a.address,
       time: a.time,
@@ -121,47 +145,47 @@ export default function AdminAgencies({ userEmail }) {
       longitude: String(a.longitude),
       phone: "",
     });
-    setEditFile(null);
-    setEditError("");
+    setEditAgencyFile(null);
+    setAgencyEditError("");
   }
 
-  function cancelEdit() {
-    setEditingId(null);
-    setEditError("");
+  function cancelEditAgency() {
+    setEditingAgencyId(null);
+    setAgencyEditError("");
   }
 
-  async function handleSaveEdit(id) {
-    const { name, address, time, latitude, longitude } = editForm;
-    if (!name.trim()) return setEditError("El nombre no puede estar vacío.");
-    if (!address.trim()) return setEditError("La dirección no puede estar vacía.");
-    if (!time.trim()) return setEditError("El horario no puede estar vacío.");
+  async function handleSaveAgencyEdit(id) {
+    const { name, address, time, latitude, longitude } = editAgencyForm;
+    if (!name.trim()) return setAgencyEditError("El nombre no puede estar vacío.");
+    if (!address.trim()) return setAgencyEditError("La dirección no puede estar vacía.");
+    if (!time.trim()) return setAgencyEditError("El horario no puede estar vacío.");
     if (latitude === "" || longitude === "")
-      return setEditError("Faltan las coordenadas (latitud/longitud).");
+      return setAgencyEditError("Faltan las coordenadas (latitud/longitud).");
 
-    setSavingEdit(true);
+    setSavingAgencyEdit(true);
     const formData = new FormData();
     formData.append("name", name.trim());
     formData.append("address", address.trim());
     formData.append("time", time.trim());
     formData.append("latitude", latitude);
     formData.append("longitude", longitude);
-    if (editFile) formData.append("image", editFile);
+    if (editAgencyFile) formData.append("image", editAgencyFile);
 
     const res = await fetch(`/api/admin/agencies/${id}`, { method: "PATCH", body: formData });
-    setSavingEdit(false);
+    setSavingAgencyEdit(false);
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setEditError(data.message || "Error al actualizar la agencia");
+      setAgencyEditError(data.message || "Error al actualizar la agencia");
       return;
     }
 
-    setEditingId(null);
-    setEditFileKey((k) => k + 1);
+    setEditingAgencyId(null);
+    setEditAgencyFileKey((k) => k + 1);
     loadAll();
   }
 
-  async function handleDelete(a) {
+  async function handleDeleteAgency(a) {
     if (
       !confirm(
         `Esta acción no se puede deshacer. ¿Eliminar "${a.name}"? Deja de mostrarse en Contáctanos y se borra también su teléfono.`
@@ -172,7 +196,7 @@ export default function AdminAgencies({ userEmail }) {
     loadAll();
   }
 
-  async function handleSavePhone(agency, newPhone) {
+  async function handleSaveAgencyPhone(agency, newPhone) {
     const current = phoneByKey[agency.phoneKey];
     if (!current) return;
     if (!newPhone.trim()) return;
@@ -187,13 +211,52 @@ export default function AdminAgencies({ userEmail }) {
     loadAll();
   }
 
+  // --- Números generales ---
+  function startEditPhone(phone) {
+    setEditingPhoneId(phone.id);
+    setEditPhoneValue(phone.phone);
+    setPhoneEditError("");
+  }
+
+  function cancelEditPhone() {
+    setEditingPhoneId(null);
+    setPhoneEditError("");
+  }
+
+  async function handleSavePhoneEdit(id) {
+    if (!editPhoneValue.trim()) {
+      setPhoneEditError("El número no puede estar vacío.");
+      return;
+    }
+
+    setSavingPhoneEdit(true);
+    const res = await fetch(`/api/admin/phones/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: editPhoneValue.trim() }),
+    });
+    setSavingPhoneEdit(false);
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setPhoneEditError(data.message || "Error al actualizar el número");
+      return;
+    }
+
+    setEditingPhoneId(null);
+    loadAll();
+  }
+
   return (
-    <AdminLayout userEmail={userEmail} title="Agencias">
-      <p className="text-sm text-gray-500 mb-6">
-        Foto, dirección, horario, ubicación en el mapa y teléfono de cada agencia mostrada en{" "}
-        &quot;Contáctanos&quot;. Los cambios se ven en el sitio al instante, sin necesidad de
-        avisarnos ni esperar un despliegue.
+    <AdminLayout userEmail={userEmail} title="Edición de contenido">
+      <p className="text-sm text-gray-500 mb-8">
+        Todo lo que antes requería un cambio de código y un despliegue — foto, dirección,
+        horario y ubicación de cada agencia, y los números generales del sitio — se edita desde
+        acá. Los cambios se ven en el sitio al instante.
       </p>
+
+      {/* ================= AGENCIAS ================= */}
+      <h2 className="text-lg font-bold text-gray-800 mb-3">Agencias</h2>
 
       <div className="mb-6">
         {!showCreate ? (
@@ -205,7 +268,7 @@ export default function AdminAgencies({ userEmail }) {
           </button>
         ) : (
           <form onSubmit={handleCreate} className="bg-white rounded-lg shadow p-6">
-            <h2 className="font-semibold text-gray-800 mb-4">Agencia nueva</h2>
+            <h3 className="font-semibold text-gray-800 mb-4">Agencia nueva</h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm text-gray-600 mb-1">Foto</label>
@@ -310,7 +373,7 @@ export default function AdminAgencies({ userEmail }) {
 
       {loading && <p className="text-gray-500 text-sm">Cargando...</p>}
 
-      <div className="space-y-4">
+      <div className="space-y-4 mb-10">
         {(agencies || []).map((a) => {
           const phoneRecord = phoneByKey[a.phoneKey];
           return (
@@ -322,16 +385,16 @@ export default function AdminAgencies({ userEmail }) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-semibold text-gray-800">{a.name}</p>
-                    {editingId !== a.id && (
+                    {editingAgencyId !== a.id && (
                       <div className="flex items-center gap-3 whitespace-nowrap">
                         <button
-                          onClick={() => startEdit(a)}
+                          onClick={() => startEditAgency(a)}
                           className="text-sm text-gray-400 hover:text-main"
                         >
                           Editar
                         </button>
                         <button
-                          onClick={() => handleDelete(a)}
+                          onClick={() => handleDeleteAgency(a)}
                           className="text-sm text-gray-400 hover:text-red-600"
                         >
                           Eliminar
@@ -339,7 +402,7 @@ export default function AdminAgencies({ userEmail }) {
                       </div>
                     )}
                   </div>
-                  {editingId !== a.id && (
+                  {editingAgencyId !== a.id && (
                     <>
                       <p className="text-sm text-gray-500 mt-1">{a.address}</p>
                       <p className="text-sm text-gray-500">{a.time}</p>
@@ -352,14 +415,16 @@ export default function AdminAgencies({ userEmail }) {
                           defaultValue={phoneRecord?.phone || ""}
                           onBlur={(e) => {
                             if (e.target.value !== phoneRecord?.phone) {
-                              handleSavePhone(a, e.target.value);
+                              handleSaveAgencyPhone(a, e.target.value);
                             }
                           }}
                           disabled={savingPhoneId === a.id}
                           className="border rounded px-2 py-1 text-sm w-48"
                         />
                         <span className="text-xs text-gray-400">
-                          {savingPhoneId === a.id ? "Guardando..." : "Teléfono (Enter/clic afuera para guardar)"}
+                          {savingPhoneId === a.id
+                            ? "Guardando..."
+                            : "Teléfono (Enter/clic afuera para guardar)"}
                         </span>
                       </div>
                       <p className="text-xs text-gray-400 mt-1">
@@ -370,16 +435,16 @@ export default function AdminAgencies({ userEmail }) {
                 </div>
               </div>
 
-              {editingId === a.id && (
+              {editingAgencyId === a.id && (
                 <div className="mt-4 pt-4 border-t">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <label className="block text-sm text-gray-600 mb-1">Foto nueva (opcional)</label>
                       <input
-                        key={editFileKey}
+                        key={editAgencyFileKey}
                         type="file"
                         accept="image/png,image/jpeg,image/webp"
-                        onChange={(e) => setEditFile(e.target.files?.[0] || null)}
+                        onChange={(e) => setEditAgencyFile(e.target.files?.[0] || null)}
                         className="w-full text-sm"
                       />
                     </div>
@@ -387,8 +452,10 @@ export default function AdminAgencies({ userEmail }) {
                       <label className="block text-sm text-gray-600 mb-1">Nombre</label>
                       <input
                         type="text"
-                        value={editForm.name}
-                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        value={editAgencyForm.name}
+                        onChange={(e) =>
+                          setEditAgencyForm({ ...editAgencyForm, name: e.target.value })
+                        }
                         className="w-full border rounded px-3 py-2 text-sm"
                       />
                     </div>
@@ -396,8 +463,10 @@ export default function AdminAgencies({ userEmail }) {
                       <label className="block text-sm text-gray-600 mb-1">Dirección</label>
                       <input
                         type="text"
-                        value={editForm.address}
-                        onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                        value={editAgencyForm.address}
+                        onChange={(e) =>
+                          setEditAgencyForm({ ...editAgencyForm, address: e.target.value })
+                        }
                         className="w-full border rounded px-3 py-2 text-sm"
                       />
                     </div>
@@ -405,8 +474,10 @@ export default function AdminAgencies({ userEmail }) {
                       <label className="block text-sm text-gray-600 mb-1">Horario</label>
                       <input
                         type="text"
-                        value={editForm.time}
-                        onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
+                        value={editAgencyForm.time}
+                        onChange={(e) =>
+                          setEditAgencyForm({ ...editAgencyForm, time: e.target.value })
+                        }
                         className="w-full border rounded px-3 py-2 text-sm"
                       />
                     </div>
@@ -415,8 +486,10 @@ export default function AdminAgencies({ userEmail }) {
                       <input
                         type="text"
                         inputMode="decimal"
-                        value={editForm.latitude}
-                        onChange={(e) => setEditForm({ ...editForm, latitude: e.target.value })}
+                        value={editAgencyForm.latitude}
+                        onChange={(e) =>
+                          setEditAgencyForm({ ...editAgencyForm, latitude: e.target.value })
+                        }
                         className="w-full border rounded px-3 py-2 text-sm"
                       />
                     </div>
@@ -425,23 +498,25 @@ export default function AdminAgencies({ userEmail }) {
                       <input
                         type="text"
                         inputMode="decimal"
-                        value={editForm.longitude}
-                        onChange={(e) => setEditForm({ ...editForm, longitude: e.target.value })}
+                        value={editAgencyForm.longitude}
+                        onChange={(e) =>
+                          setEditAgencyForm({ ...editAgencyForm, longitude: e.target.value })
+                        }
                         className="w-full border rounded px-3 py-2 text-sm"
                       />
                     </div>
                   </div>
-                  {editError && <p className="text-main text-sm mt-3">{editError}</p>}
+                  {agencyEditError && <p className="text-main text-sm mt-3">{agencyEditError}</p>}
                   <div className="flex items-center gap-3 mt-4">
                     <button
-                      onClick={() => handleSaveEdit(a.id)}
-                      disabled={savingEdit}
+                      onClick={() => handleSaveAgencyEdit(a.id)}
+                      disabled={savingAgencyEdit}
                       className="bg-main text-white px-4 py-2 rounded-md text-sm font-semibold disabled:opacity-50"
                     >
-                      {savingEdit ? "Guardando..." : "Guardar"}
+                      {savingAgencyEdit ? "Guardando..." : "Guardar"}
                     </button>
                     <button
-                      onClick={cancelEdit}
+                      onClick={cancelEditAgency}
                       className="text-sm text-gray-500 hover:text-gray-700"
                     >
                       Cancelar
@@ -452,6 +527,99 @@ export default function AdminAgencies({ userEmail }) {
             </div>
           );
         })}
+      </div>
+
+      {/* ================= NÚMEROS GENERALES ================= */}
+      <h2 className="text-lg font-bold text-gray-800 mb-3">Números generales</h2>
+      <p className="text-sm text-gray-500 mb-6">
+        WhatsApp del sitio y demás números que no son de una agencia específica (botón flotante,
+        cotizador, botón &quot;Agendar&quot; en la ficha de vehículo).
+      </p>
+
+      {Object.keys(generalGrouped).map((category) => (
+        <div key={category} className="bg-white rounded-lg shadow p-6 mb-6">
+          <h3 className="font-semibold text-gray-800 mb-4">
+            {CATEGORY_LABELS[category] || category}
+          </h3>
+          <div className="space-y-3">
+            {generalGrouped[category].map((p) => (
+              <div key={p.id} className="border rounded-md p-3">
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-gray-700 font-medium truncate">{p.label}</div>
+                    {editingPhoneId !== p.id && (
+                      <div className="text-sm text-gray-500 mt-0.5">{p.phone}</div>
+                    )}
+                    {p.updatedBy && (
+                      <div className="text-xs text-gray-400 mt-0.5">
+                        Última modificación: {p.updatedBy} — {formatDateTime(p.updatedAt)}
+                      </div>
+                    )}
+                  </div>
+                  {editingPhoneId !== p.id && (
+                    <button
+                      onClick={() => startEditPhone(p)}
+                      className="text-sm text-gray-400 hover:text-main whitespace-nowrap"
+                    >
+                      Editar
+                    </button>
+                  )}
+                </div>
+
+                {editingPhoneId === p.id && (
+                  <div className="mt-3 pt-3 border-t">
+                    <input
+                      type="text"
+                      value={editPhoneValue}
+                      onChange={(e) => setEditPhoneValue(e.target.value)}
+                      className="w-full border rounded px-3 py-2 text-sm"
+                      autoFocus
+                    />
+                    {phoneEditError && <p className="text-main text-sm mt-2">{phoneEditError}</p>}
+                    <div className="flex items-center gap-3 mt-3">
+                      <button
+                        onClick={() => handleSavePhoneEdit(p.id)}
+                        disabled={savingPhoneEdit}
+                        className="bg-main text-white px-4 py-2 rounded-md text-sm font-semibold disabled:opacity-50"
+                      >
+                        {savingPhoneEdit ? "Guardando..." : "Guardar"}
+                      </button>
+                      <button
+                        onClick={cancelEditPhone}
+                        className="text-sm text-gray-500 hover:text-gray-700"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      <div className="bg-white rounded-lg shadow p-6">
+        <h2 className="font-semibold text-gray-800 mb-1">Historial de cambios de teléfonos</h2>
+        <p className="text-xs text-gray-400 mb-4">
+          Registro permanente (agencias y números generales) — no se puede editar ni eliminar
+          desde el panel.
+        </p>
+        {!log && <p className="text-gray-500 text-sm">Cargando...</p>}
+        {log?.length === 0 && <p className="text-gray-500 text-sm">Todavía no hay cambios registrados.</p>}
+        <div className="space-y-2">
+          {log?.map((entry) => (
+            <div key={entry.id} className="text-sm border-b last:border-b-0 pb-2">
+              <span className="font-medium text-gray-700">{entry.label}</span>{" "}
+              <span className="text-gray-400">
+                {entry.oldValue} → {entry.newValue}
+              </span>
+              <div className="text-xs text-gray-400">
+                {entry.changedBy} — {formatDateTime(entry.changedAt)}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </AdminLayout>
   );
