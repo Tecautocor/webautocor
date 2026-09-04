@@ -31,6 +31,25 @@ model Phone {
   updatedBy String?
 }
 
+// Agencias mostradas en /contactanos (tarjeta + pin del mapa). El teléfono de
+// cada una sigue viviendo en Phone (categoria "agencia", unido por phoneKey)
+// para no duplicar el historial de auditoría que ya tiene esa tabla - este
+// modelo cubre el resto de datos que antes estaban hardcodeados en el código
+// (pages/contactanos.js) y por eso cualquier cambio (mudanza, foto nueva)
+// necesitaba un deploy.
+model Agency {
+  id        Int      @id @default(autoincrement())
+  phoneKey  String   @unique
+  name      String
+  address   String   @db.Text
+  time      String   @db.Text
+  latitude  Float
+  longitude Float
+  src       String
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}
+
 // Historial de cambios de números telefónicos. Solo se inserta, nunca se
 // actualiza ni se borra desde la app (ningún endpoint expone UPDATE/DELETE
 // para este modelo) - es el registro permanente de quién cambió qué.

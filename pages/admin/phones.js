@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { requireAdminSession } from "../../lib/adminAuth";
 import AdminLayout from "../../components/admin/AdminLayout";
 
@@ -90,19 +91,22 @@ export default function AdminPhones({ userEmail }) {
     loadLog();
   }
 
-  const grouped = (phones || []).reduce((acc, p) => {
-    acc[p.category] = acc[p.category] || [];
-    acc[p.category].push(p);
-    return acc;
-  }, {});
+  const grouped = (phones || [])
+    .filter((p) => p.category !== "agencia")
+    .reduce((acc, p) => {
+      acc[p.category] = acc[p.category] || [];
+      acc[p.category].push(p);
+      return acc;
+    }, {});
 
   return (
     <AdminLayout userEmail={userEmail} title="Números telefónicos">
       <p className="text-sm text-gray-500 mb-6">
-        Estos números alimentan directamente el sitio (botón flotante de WhatsApp, cotizador,
-        botón &quot;Agendar&quot; en la ficha de vehículo, y el teléfono de cada agencia en{" "}
-        &quot;Contáctanos&quot;). Cada cambio queda registrado abajo en el historial — quién lo
-        hizo y cuándo — y ese historial no se puede eliminar desde el panel.
+        Estos números alimentan directamente el sitio (botón flotante de WhatsApp, cotizador y
+        botón &quot;Agendar&quot; en la ficha de vehículo). El teléfono de cada agencia se edita
+        desde <Link href="/admin/agencies" className="underline hover:text-main">Agencias</Link>, junto
+        con su foto, dirección y horario. Cada cambio queda registrado abajo en el historial —
+        quién lo hizo y cuándo — y ese historial no se puede eliminar desde el panel.
       </p>
 
       {loading && <p className="text-gray-500 text-sm">Cargando...</p>}

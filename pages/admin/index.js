@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAdminSession } from "../../lib/adminAuth";
 import AdminLayout from "../../components/admin/AdminLayout";
-import { PhotoIcon, PhoneIcon, ShieldCheckIcon, ChartBarSquareIcon } from "@heroicons/react/24/outline";
+import { PhotoIcon, PhoneIcon, ShieldCheckIcon, ChartBarSquareIcon, BuildingStorefrontIcon } from "@heroicons/react/24/outline";
 
 export async function getServerSideProps(context) {
   return requireAdminSession(context);
@@ -15,9 +15,16 @@ const MODULES = [
     icon: PhotoIcon,
   },
   {
+    title: "Agencias",
+    description:
+      "Foto, dirección, horario, ubicación en el mapa y teléfono de cada agencia en Contáctanos.",
+    href: "/admin/agencies",
+    icon: BuildingStorefrontIcon,
+  },
+  {
     title: "Números telefónicos",
     description:
-      "WhatsApp del sitio y teléfono de cada agencia, con historial permanente de cambios.",
+      "WhatsApp del sitio y demás números generales, con historial permanente de cambios. El teléfono de cada agencia se edita en \"Agencias\".",
     href: "/admin/phones",
     icon: PhoneIcon,
   },

@@ -1,112 +1,25 @@
 import Layout from "../components/Layout";
 import Image from "next/image";
 import Maps from "../components/Maps";
-import { useListPhonesQuery } from "../lib/hooks";
-
-const agencias = [
-  {
-    id: 1,
-    src: "/autocor-local-3.jpg",
-    name: "Autocor Matriz Av. 6 de Diciembre",
-    address: "Av. 6 de diciembre SN N61 y Santa Lucia",
-    time: "Lunes a Viernes de 08:00 a 18:00, Sábado de 09:00 a 17:00 y Domingo de 10:00 a 14:00",
-    location: { latitude: -0.12705068988192195, longitude: -78.47793321363118 },
-    phoneKey: "agencia_matriz",
-    phone: "+593 99 965 3587"
-  },
-  {
-    id: 2,
-    src: "/autocor-local-cumbaya.jpg",
-    name: "Autocor Cumbaya",
-    address: "Av. Oswaldo Guayasamín",
-    time: "Lunes a Viernes de 9:00 a 18:30; Sábado de 09:00 a 17:00 y Domingo de 10:00 a 14:00",
-    location: { latitude: -0.20599, longitude: -78.43362 },
-    phoneKey: "agencia_cumbaya",
-    phone: "+593 99 043 6699"
-  },
-  {
-    id: 3,
-    src: "/autocor-local-5.jpg",
-    name: "Autocor Shyris",
-    address: "Av. De Los Shyris y El Universo E8-40",
-    time: "Lunes a Viernes de 08:00 a 18:00, Sábado de 09:00 a 17:00 y Domingo de 10:00 a 14:00",
-    location: { latitude: -0.17091753257295517, longitude: -78.48016468479545 },
-    phoneKey: "agencia_shyris",
-    phone: "+593 98 300 5861"
-  },
-  {
-    id: 4,
-    src: "/autocor-local-4.jpg",
-    name: "Autocor Eloy Alfaro",
-    address:
-      "Av. Eloy Alfaro E14 - 65 y Camilo Gallegos, esquina (una cuadra antes de la Av. De los Granados).",
-    time: "Lunes a Viernes de 08:00 a 19:00, Sábado de 09:00 a 17:00 y Domingo de 10:00 a 14:00.",
-    location: { latitude: -0.16664207649076915, longitude: -78.46845050013835 },
-    phoneKey: "agencia_eloy_alfaro",
-    phone: "+593 99 037 4297"
-  },
-  {
-    id: 5,
-    src: "/autocor-local-2.jpg",
-    name: "Autocor Av. Orellana",
-    address:
-      "Av. Francisco de Orellana E4-328 y Enrique Gangotena. Diagonal al Hotel Marriott. Quito, Pichincha",
-    time: "Lunes a Viernes de 08:00 a 19:00, Sábado de 09:00 a 17:00 y Domingo de 10:00 a 14:00",
-    location: { latitude: -0.19742284789267078, longitude: -78.49054922297624 },
-    phoneKey: "agencia_orellana",
-    phone: "+593 99 043 6699"
-  },
-  {
-    id: 6,
-    src: "/autocor-local-prensa.jpg",
-    name: "Autocor Prensa",
-    address: "Av. La Prensa N46-15 y, Zamora, Frente al Tecnologico Cordillera",
-    time: "Lunes a Viernes de 08:00 a 18:30, Sábado de 09:00 a 17:00 y Domingo de 10:00 - 14:00",
-    location: { latitude: -0.15546, longitude: -78.48885 },
-    phoneKey: "agencia_prensa",
-    phone: "+593 99 965 3587"
-  },
-  {
-    id: 7,
-    src: "/autocor-local-loschillos.jpg",
-    name: "Autocor Valle de los Chillos",
-    address: "Av. General Enríquez y San Juan de Dios esquina.",
-    time: "Lunes a viernes de 08:00 - 19:00, Sábados de 09:00 - 17:00 y Domingo de 10:00 - 14:00",
-    location: { latitude: -0.3049719, longitude: -78.4510271 },
-    phoneKey: "agencia_valle_chillos",
-    phone: "+593 99 965 3587"
-  },
-  {
-    id: 8,
-    src: "/autocor-local-sur.jpg",
-    name: "Autocor Sur",
-    address: "Av. Morán Valverde y Llira Ñan, 170606 Quito, Frente al Quicentro Sur",
-    time: "Lunes a viernes de 08:00 - 18:00, Sábados de 09:00 - 17:00 y Domingo de 10:00 - 14:00",
-    location: { latitude: -0.2853, longitude: -78.5438 },
-    phoneKey: "agencia_sur",
-    phone: "+593 99 333 9571"
-  },
-  {
-    id: 8,
-    src: "/autocor-local-guayaquil.jpg",
-    name: "Autocor Guayaquil",
-    address: "Av. de las Américas, junto al ingreso del Aeropuerto Jose Joaquin de Olmedo.",
-    time: "Lunes a viernes de 08:00 - 18:00, Sábados de 09:00 - 17:00 y Domingo de 10:00 - 14:00",
-    location: { latitude: -2.14946, longitude: -79.88602 },
-    phoneKey: "agencia_guayaquil",
-    phone: "+593 98 300 5861"
-  },
-];
+import { useListPhonesQuery, useListAgenciesQuery } from "../lib/hooks";
 
 export default function Contact() {
   const { data: phonesData } = useListPhonesQuery();
+  const { data: agenciesData } = useListAgenciesQuery();
+
   const phoneByKey = Object.fromEntries(
     (phonesData?.entitydata || []).map((p) => [p.key, p.phone])
   );
 
-  const agenciasConTelefono = agencias.map((a) => ({
-    ...a,
-    phone: phoneByKey[a.phoneKey] || a.phone,
+  const agenciasConTelefono = (agenciesData?.entitydata || []).map((a) => ({
+    id: a.id,
+    src: a.src,
+    name: a.name,
+    address: a.address,
+    time: a.time,
+    location: { latitude: a.latitude, longitude: a.longitude },
+    phoneKey: a.phoneKey,
+    phone: phoneByKey[a.phoneKey] || "",
   }));
 
   const comprasPhone = phoneByKey["agencia_compras"] || "+593 99 037 4297";
