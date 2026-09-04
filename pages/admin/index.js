@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAdminSession } from "../../lib/adminAuth";
 import AdminLayout from "../../components/admin/AdminLayout";
-import { PhotoIcon, PencilSquareIcon, ShieldCheckIcon, ChartBarSquareIcon } from "@heroicons/react/24/outline";
+import { PencilSquareIcon, ShieldCheckIcon, ChartBarSquareIcon } from "@heroicons/react/24/outline";
 
 export async function getServerSideProps(context) {
   return requireAdminSession(context);
@@ -9,15 +9,9 @@ export async function getServerSideProps(context) {
 
 const MODULES = [
   {
-    title: "Banners",
-    description: "Ver, subir y eliminar los banners del carrusel del home.",
-    href: "/admin/banners",
-    icon: PhotoIcon,
-  },
-  {
     title: "Edición de contenido",
     description:
-      "Foto, dirección, horario y ubicación de cada agencia, más los números telefónicos generales del sitio (WhatsApp, etc.), con historial de cambios.",
+      "Agencias (foto, dirección, horario, mapa, teléfono), números telefónicos generales y banners del home — todo con historial de cambios.",
     href: "/admin/contenido",
     icon: PencilSquareIcon,
   },
