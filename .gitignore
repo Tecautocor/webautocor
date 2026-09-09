@@ -50,3 +50,7 @@ next-env.d.ts
 
 # worktrees temporales de Claude Code — no son parte de la app
 /.claude/
+
+# archivos subidos en runtime desde el panel de admin (banners, fotos de agencias) —
+# servidos vía /api/uploads/[...path].js, nunca deben versionarse
+/uploads/

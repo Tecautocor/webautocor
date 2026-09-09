@@ -56,13 +56,13 @@ async function handler(req, res) {
         const ext = path.extname(file.originalFilename || "").toLowerCase();
         const safeExt = ALLOWED_EXT.includes(ext) ? ext : ".jpg";
         const filename = `agencia-${Date.now()}${safeExt}`;
-        const destDir = path.join(process.cwd(), "public", "agencias");
+        const destDir = path.join(process.cwd(), "uploads", "agencias");
         const destPath = path.join(destDir, filename);
 
         fs.mkdirSync(destDir, { recursive: true });
         fs.copyFileSync(file.filepath, destPath);
         fs.unlink(file.filepath, () => {});
-        src = `/agencias/${filename}`;
+        src = `/api/uploads/agencias/${filename}`;
       }
 
       const updated = await db.agency.update({

@@ -55,7 +55,7 @@ async function handler(req, res) {
       const ext = path.extname(file.originalFilename || "").toLowerCase();
       const safeExt = ALLOWED_EXT.includes(ext) ? ext : ".jpg";
       const filename = `banner-${Date.now()}${safeExt}`;
-      const destDir = path.join(process.cwd(), "public", "banners");
+      const destDir = path.join(process.cwd(), "uploads", "banners");
       const destPath = path.join(destDir, filename);
 
       fs.mkdirSync(destDir, { recursive: true });
@@ -66,7 +66,7 @@ async function handler(req, res) {
 
       const banner = await db.banner.create({
         data: {
-          src: `/banners/${filename}`,
+          src: `/api/uploads/banners/${filename}`,
           href,
           external,
           order: 0,
