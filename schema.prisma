@@ -233,6 +233,24 @@ model LiquidacionVehicle {
   bono          Decimal?  @db.Decimal(10, 2)
 }
 
+// Registro manual de vehiculos vendidos/facturados (negocio cerrado), ligado
+// por license_plate. Vehicle se trunca y recarga completa cada hora desde
+// Pilot (loadVehicles) y Pilot no expone todavia la fecha de cierre real via
+// API, asi que este dato no puede vivir en Vehicle - se captura a mano desde
+// /admin/inventario y se usa para excluir la unidad del inventario activo.
+model VehiculoVendido {
+  id                Int      @id @default(autoincrement())
+  licensePlate      String   @unique @db.VarChar(20)
+  marca             String?  @db.VarChar(100)
+  modelo            String?  @db.VarChar(100)
+  anio              Int?
+  agencia           String?  @db.VarChar(100)
+  diasEnStockCierre Int?
+  fechaCierre       DateTime @db.Date
+  registradoPor     String?
+  createdAt         DateTime @default(now())
+}
+
 model Vehicle {
   id_record                  Int       @id @unique(map: "id") @default(autoincrement())
   id                         String?

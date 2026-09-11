@@ -97,7 +97,7 @@ export default function AdminAnalisisComercial({ userEmail }) {
   }, [rentabilidadEnVivo]);
 
   return (
-    <AdminLayout userEmail={userEmail} title="Análisis Comercial">
+    <AdminLayout userEmail={userEmail} title="Análisis Comercial" backHref="/admin/bi">
       {loading ? (
         <p className="text-gray-500 text-sm">Cargando...</p>
       ) : (

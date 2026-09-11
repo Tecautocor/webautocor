@@ -21,7 +21,6 @@ import {
   ClockIcon,
   ExclamationTriangleIcon,
   BanknotesIcon,
-  ChartPieIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 
@@ -122,9 +121,7 @@ export default function AdminInventario({ userEmail }) {
     carroceria: null,
     marca: null,
     rangoDias: null,
-    anio: null,
   });
-
   useEffect(() => {
     fetch("/api/admin/inventario")
       .then((r) => r.json())
@@ -139,14 +136,13 @@ export default function AdminInventario({ userEmail }) {
   };
 
   const clearAll = () =>
-    setFilters({ agencia: null, carroceria: null, marca: null, rangoDias: null, anio: null });
+    setFilters({ agencia: null, carroceria: null, marca: null, rangoDias: null });
 
   const matchesExcept = (v, exceptDim) => {
     if (exceptDim !== "agencia" && filters.agencia && v.agencia !== filters.agencia) return false;
     if (exceptDim !== "carroceria" && filters.carroceria && v.carroceria !== filters.carroceria) return false;
     if (exceptDim !== "marca" && filters.marca && v.marca !== filters.marca) return false;
     if (exceptDim !== "rangoDias" && filters.rangoDias && bucketRango(v.diasEnStock) !== filters.rangoDias) return false;
-    if (exceptDim !== "anio" && filters.anio && String(v.anio) !== String(filters.anio)) return false;
     return true;
   };
 
@@ -164,21 +160,12 @@ export default function AdminInventario({ userEmail }) {
       : 0;
     const masDe90 = filtered.filter((v) => bucketRango(v.diasEnStock) === ">90").length;
 
-    const porModelo = groupCount(filtered, (v) => `${v.marca} ${v.modelo}`);
-    const top10Sum = [...porModelo.values()]
-      .sort((a, b) => b - a)
-      .slice(0, 10)
-      .reduce((s, n) => s + n, 0);
-    const concentracionTop10 = total ? (top10Sum / total) * 100 : 0;
-
     return {
       total,
       valorTotal,
-      valorPromedio: total ? valorTotal / total : 0,
       edadPromedio,
       masDe90,
       masDe90Pct: total ? (masDe90 / total) * 100 : 0,
-      concentracionTop10,
     };
   }, [filtered]);
 
@@ -200,14 +187,6 @@ export default function AdminInventario({ userEmail }) {
       .map(([name, value]) => ({ name, value, color: CARROCERIA_COLORS[name] || "#94a3b8" }));
   }, [vehicles, filters]);
 
-  const anioData = useMemo(() => {
-    const base = vehicles.filter((v) => matchesExcept(v, "anio"));
-    const counts = groupCount(base, (v) => v.anio || "Sin dato");
-    return [...counts.entries()]
-      .sort((a, b) => (b[0] > a[0] ? 1 : -1))
-      .map(([name, value]) => ({ name: String(name), value }));
-  }, [vehicles, filters]);
-
   const agenciaData = useMemo(() => {
     const base = vehicles.filter((v) => matchesExcept(v, "agencia"));
     const counts = groupCount(base, (v) => v.agencia);
@@ -216,7 +195,7 @@ export default function AdminInventario({ userEmail }) {
       .map(([name, value]) => ({ name, value }));
   }, [vehicles, filters]);
 
-  const top15Modelos = useMemo(() => {
+  const top5Modelos = useMemo(() => {
     const map = new Map();
     for (const v of filtered) {
       const key = `${v.marca} ${v.modelo}`;
@@ -232,20 +211,33 @@ export default function AdminInventario({ userEmail }) {
       }
     }
     const total = filtered.length || 1;
+    let acumulado = 0;
     return [...map.values()]
       .sort((a, b) => b.unidades - a.unidades)
-      .slice(0, 15)
-      .map((m, i) => ({
-        pos: i + 1,
-        modelo: m.modelo,
-        unidades: m.unidades,
-        pct: (m.unidades / total) * 100,
-        diasPromedio: m.diasN ? m.diasSum / m.diasN : null,
-        diasMax: m.diasMax,
-        valorTotal: m.valorSum,
-        valorPromedio: m.valorSum / m.unidades,
-        anioPromedio: Math.round(m.anioSum / m.unidades),
-      }));
+      .slice(0, 5)
+      .map((m, i) => {
+        const pct = (m.unidades / total) * 100;
+        acumulado += pct;
+        return {
+          pos: i + 1,
+          modelo: m.modelo,
+          unidades: m.unidades,
+          pct,
+          pctAcumulado: Math.min(acumulado, 100),
+          diasPromedio: m.diasN ? m.diasSum / m.diasN : null,
+          diasMax: m.diasMax,
+          valorTotal: m.valorSum,
+          valorPromedio: m.valorSum / m.unidades,
+          anioPromedio: Math.round(m.anioSum / m.unidades),
+        };
+      });
+  }, [filtered]);
+
+  const top10Antiguos = useMemo(() => {
+    return filtered
+      .filter((v) => v.diasEnStock !== null)
+      .sort((a, b) => b.diasEnStock - a.diasEnStock)
+      .slice(0, 10);
   }, [filtered]);
 
   const activeChips = [
@@ -253,11 +245,10 @@ export default function AdminInventario({ userEmail }) {
     filters.carroceria && { dim: "carroceria", label: filters.carroceria },
     filters.marca && { dim: "marca", label: filters.marca },
     filters.rangoDias && { dim: "rangoDias", label: `${filters.rangoDias} días` },
-    filters.anio && { dim: "anio", label: `Año ${filters.anio}` },
   ].filter(Boolean);
 
   return (
-    <AdminLayout userEmail={userEmail} title="Resumen de Inventario">
+    <AdminLayout userEmail={userEmail} title="Resumen de Inventario" backHref="/admin/bi">
       {loading ? (
         <p className="text-gray-500 text-sm">Cargando inventario en vivo...</p>
       ) : (
@@ -289,30 +280,22 @@ export default function AdminInventario({ userEmail }) {
           </div>
 
           {/* KPIs */}
-          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6 mb-6">
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4 mb-6">
             <KpiCard icon={CubeIcon} label="Inventario total" value={kpis.total} tone="gray" delay={0} />
-            <KpiCard
-              icon={ChartPieIcon}
-              label="Top 10 modelos concentran"
-              value={kpis.concentracionTop10}
-              format={(n) => n.toFixed(0) + "%"}
-              tone="blue"
-              delay={0.05}
-            />
             <KpiCard
               icon={ClockIcon}
               label="Edad promedio (días)"
               value={kpis.edadPromedio}
               format={(n) => Math.round(n)}
               tone="orange"
-              delay={0.1}
+              delay={0.05}
             />
             <KpiCard
               icon={ExclamationTriangleIcon}
               label={`Con +90 días (${kpis.masDe90Pct.toFixed(0)}%)`}
               value={kpis.masDe90}
               tone="red"
-              delay={0.15}
+              delay={0.1}
             />
             <KpiCard
               icon={BanknotesIcon}
@@ -320,15 +303,7 @@ export default function AdminInventario({ userEmail }) {
               value={kpis.valorTotal}
               format={currency}
               tone="green"
-              delay={0.2}
-            />
-            <KpiCard
-              icon={BanknotesIcon}
-              label="Valor promedio / unidad"
-              value={kpis.valorPromedio}
-              format={currency}
-              tone="green"
-              delay={0.25}
+              delay={0.15}
             />
           </div>
 
@@ -402,35 +377,6 @@ export default function AdminInventario({ userEmail }) {
             </motion.div>
 
             <motion.div layout className="bg-white rounded-xl shadow-sm p-5">
-              <h3 className="font-semibold text-gray-800 mb-1">Inventario por año modelo</h3>
-              <p className="text-xs text-gray-400 mb-2">Clic en una barra para filtrar</p>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={anioData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis hide />
-                  <Tooltip formatter={(v) => [`${v} unidades`]} />
-                  <Bar
-                    dataKey="value"
-                    radius={[6, 6, 0, 0]}
-                    animationDuration={600}
-                    onClick={(d) => toggleFilter("anio", d.name)}
-                    cursor="pointer"
-                  >
-                    {anioData.map((entry) => (
-                      <Cell
-                        key={entry.name}
-                        fill="#1e293b"
-                        opacity={filters.anio && filters.anio !== entry.name ? 0.3 : 1}
-                      />
-                    ))}
-                    <LabelList dataKey="value" position="top" fontSize={12} fontWeight={700} />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </motion.div>
-
-            <motion.div layout className="bg-white rounded-xl shadow-sm p-5">
               <h3 className="font-semibold text-gray-800 mb-1">Inventario por agencia</h3>
               <p className="text-xs text-gray-400 mb-2">Clic en una barra para filtrar</p>
               <ResponsiveContainer width="100%" height={220}>
@@ -458,64 +404,111 @@ export default function AdminInventario({ userEmail }) {
                 </BarChart>
               </ResponsiveContainer>
             </motion.div>
+
+            <motion.div layout className="bg-white rounded-xl shadow-sm p-5">
+              <h3 className="font-semibold text-gray-800 mb-1">Top 5 modelos con más unidades</h3>
+              <p className="text-xs text-gray-400 mb-3">
+                Barra = unidades relativas al modelo líder. Clic en un modelo para filtrar.
+              </p>
+              {top5Modelos.length > 0 ? (
+                <div className="space-y-2">
+                  {top5Modelos.map((m) => {
+                    const maxUnidades = top5Modelos[0].unidades || 1;
+                    const relPct = Math.round((m.unidades / maxUnidades) * 100);
+                    return (
+                      <button
+                        key={m.modelo}
+                        onClick={() => toggleFilter("marca", m.modelo.split(" ")[0])}
+                        className={`w-full text-left flex items-center gap-3 border rounded-lg px-3 py-2 hover:bg-gray-50 transition ${
+                          filters.marca && filters.marca !== m.modelo.split(" ")[0] ? "opacity-40" : ""
+                        }`}
+                      >
+                        <span className="font-bold text-gray-800 text-sm w-4 shrink-0">{m.pos}</span>
+                        <span className="font-bold text-gray-800 text-sm uppercase truncate flex-1">
+                          {m.modelo}
+                        </span>
+                        <span className="text-xs text-gray-500 whitespace-nowrap shrink-0">
+                          {m.unidades} units
+                        </span>
+                        <div className="w-20 h-2 bg-gray-100 rounded-full overflow-hidden shrink-0 hidden sm:block">
+                          <div
+                            className="h-full bg-slate-500 rounded-full"
+                            style={{ width: `${relPct}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-semibold text-gray-700 w-10 text-right shrink-0">
+                          {relPct}%
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm py-6 text-center">
+                  No hay vehículos que coincidan con los filtros seleccionados.
+                </p>
+              )}
+            </motion.div>
           </div>
 
-          {/* Tabla top 15 modelos */}
-          <div className="bg-white rounded-xl shadow-sm p-5 overflow-x-auto">
-            <h3 className="font-semibold text-gray-800 mb-3">Top 15 modelos con más unidades</h3>
+          {/* Tabla top 10 vehículos más antiguos */}
+          <div className="bg-white rounded-xl shadow-sm p-5 overflow-x-auto mb-6">
+            <h3 className="font-semibold text-gray-800 mb-1">Top 10 vehículos más antiguos</h3>
+            <p className="text-xs text-gray-400 mb-3">
+              Ordenado por días en stock (no por unidades) — mientras más días, mayor pérdida para el negocio.
+            </p>
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-400 text-xs uppercase border-b">
                   <th className="py-2 pr-2">Pos</th>
-                  <th className="py-2 pr-2">Modelo</th>
-                  <th className="py-2 pr-2 text-right">Unidades</th>
-                  <th className="py-2 pr-2 text-right">% del total</th>
-                  <th className="py-2 pr-2 text-right">Días prom.</th>
-                  <th className="py-2 pr-2 text-right">Máx. días</th>
-                  <th className="py-2 pr-2 text-right">Valor total</th>
-                  <th className="py-2 pr-2 text-right">Valor prom.</th>
-                  <th className="py-2 pr-2 text-right">Año prom.</th>
+                  <th className="py-2 pr-2">Vehículo</th>
+                  <th className="py-2 pr-2">Placa</th>
+                  <th className="py-2 pr-2">Color</th>
+                  <th className="py-2 pr-2">Agencia</th>
+                  <th className="py-2 pr-2 text-right">Año</th>
+                  <th className="py-2 pr-2 text-right">Valor</th>
+                  <th className="py-2 pr-2 text-right">Días en stock</th>
                 </tr>
               </thead>
               <tbody>
                 <AnimatePresence mode="popLayout">
-                  {top15Modelos.map((m) => (
+                  {top10Antiguos.map((v, i) => (
                     <motion.tr
-                      key={m.modelo}
+                      key={v.placa || `${v.marca}-${v.modelo}-${i}`}
                       layout
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      onClick={() => toggleFilter("marca", m.modelo.split(" ")[0])}
-                      className="border-b last:border-0 hover:bg-gray-50 cursor-pointer"
+                      className="border-b last:border-0"
                     >
-                      <td className="py-2 pr-2 text-gray-400">{m.pos}</td>
-                      <td className="py-2 pr-2 font-medium text-gray-800">{m.modelo}</td>
-                      <td className="py-2 pr-2 text-right tabular-nums">{m.unidades}</td>
-                      <td className="py-2 pr-2 text-right tabular-nums text-gray-500">{m.pct.toFixed(1)}%</td>
+                      <td className="py-2 pr-2 text-gray-400">{i + 1}</td>
+                      <td className="py-2 pr-2 font-medium text-gray-800">
+                        {v.marca} {v.modelo}
+                      </td>
+                      <td className="py-2 pr-2 text-gray-500">{v.placa || "—"}</td>
+                      <td className="py-2 pr-2 text-gray-500">{v.color || "—"}</td>
+                      <td className="py-2 pr-2 text-gray-500">{v.agencia}</td>
+                      <td className="py-2 pr-2 text-right tabular-nums text-gray-500">{v.anio || "—"}</td>
+                      <td className="py-2 pr-2 text-right tabular-nums text-gray-500">{currency(v.valor)}</td>
                       <td className="py-2 pr-2 text-right tabular-nums">
                         <span
                           className="px-2 py-0.5 rounded text-xs font-semibold"
                           style={{
-                            color: semaforoColor(m.diasPromedio),
-                            backgroundColor: semaforoColor(m.diasPromedio) + "1a",
+                            color: semaforoColor(v.diasEnStock),
+                            backgroundColor: semaforoColor(v.diasEnStock) + "1a",
                           }}
                         >
-                          {m.diasPromedio !== null ? Math.round(m.diasPromedio) : "—"}
+                          {v.diasEnStock}
                         </span>
                       </td>
-                      <td className="py-2 pr-2 text-right tabular-nums text-gray-500">{m.diasMax || "—"}</td>
-                      <td className="py-2 pr-2 text-right tabular-nums">{currency(m.valorTotal)}</td>
-                      <td className="py-2 pr-2 text-right tabular-nums text-gray-500">{currency(m.valorPromedio)}</td>
-                      <td className="py-2 pr-2 text-right tabular-nums text-gray-500">{m.anioPromedio}</td>
                     </motion.tr>
                   ))}
                 </AnimatePresence>
               </tbody>
             </table>
-            {top15Modelos.length === 0 && (
+            {top10Antiguos.length === 0 && (
               <p className="text-gray-400 text-sm py-6 text-center">
-                No hay vehículos que coincidan con los filtros seleccionados.
+                No hay vehículos con días en stock que coincidan con los filtros seleccionados.
               </p>
             )}
           </div>

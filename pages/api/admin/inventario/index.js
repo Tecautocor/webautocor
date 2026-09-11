@@ -40,11 +40,17 @@ async function handler(req, res) {
       days_in_stock: true,
       owner_branch_code: true,
       created_dt: true,
+      license_plate: true,
+      color: true,
     },
   });
 
+  const vendidos = await db.vehiculoVendido.findMany({ select: { licensePlate: true } });
+  const placasVendidas = new Set(vendidos.map((v) => v.licensePlate));
+
   const vehicles = rows
     .filter((v) => v.brand && v.model)
+    .filter((v) => !placasVendidas.has((v.license_plate || "").trim()))
     .map((v) => ({
       id: v.id,
       marca: v.brand.trim(),
@@ -55,6 +61,8 @@ async function handler(req, res) {
       diasEnStock: parseDays(v.days_in_stock),
       agencia: (v.owner_branch_code || "").trim() || "Sin agencia",
       fechaIngreso: v.created_dt,
+      placa: (v.license_plate || "").trim() || null,
+      color: (v.color || "").trim() || null,
     }));
 
   return res.status(200).json({ vehicles });

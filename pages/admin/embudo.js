@@ -97,7 +97,7 @@ export default function AdminEmbudo({ userEmail }) {
     : null;
 
   return (
-    <AdminLayout userEmail={userEmail} title="Embudo de Conversión">
+    <AdminLayout userEmail={userEmail} title="Embudo de Conversión" backHref="/admin/bi">
       {loading ? (
         <p className="text-gray-500 text-sm">Cargando...</p>
       ) : (

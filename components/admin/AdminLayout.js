@@ -1,9 +1,10 @@
 import Link from "next/link";
 import Head from "next/head";
 import { signOut } from "next-auth/react";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { Logo } from "../Shared";
 
-export default function AdminLayout({ userEmail, title, children }) {
+export default function AdminLayout({ userEmail, title, backHref, backLabel = "Volver a BI", children }) {
   return (
     <div className="min-h-screen bg-gray-100">
       <Head>
@@ -29,6 +30,15 @@ export default function AdminLayout({ userEmail, title, children }) {
         </div>
       </header>
       <main className="max-w-5xl mx-auto px-4 py-8">
+        {backHref && (
+          <Link
+            href={backHref}
+            className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-main mb-3"
+          >
+            <ArrowLeftIcon className="h-4 w-4" />
+            {backLabel}
+          </Link>
+        )}
         {title && <h1 className="text-2xl font-bold text-gray-800 mb-6">{title}</h1>}
         {children}
       </main>

@@ -106,16 +106,57 @@ export default function AdminPerformance({ userEmail }) {
   };
   const clearAll = () => setFilters({ agencia: null, mes: null });
 
-  const ventas = data?.ventas || [];
+  const ventasAllVehicle = data?.ventas || [];
   const metas = data?.metas || [];
+  const estadoRegistrada = data?.estadoRegistrada || [];
+  const estadoAprobadoJefatura = data?.estadoAprobadoJefatura || [];
+  const estadoPendientes = data?.estadoPendientes || [];
+
+  // PRUEBA (2026-09-10, a pedido del cliente): combinar dos fuentes para
+  // "ventas" - AllVehicle (fecha de facturacion) para meses anteriores a
+  // agosto 2026, y el embudo de webhooks de Pilot (Registrada + Aprobado
+  // Jefatura completadas = las dos etapas del proceso terminaron, vehiculo
+  // entregado) desde agosto en adelante, que es desde cuando esos webhooks
+  // estan conectados. Si no cuadra, revertir a `ventasAllVehicle` sola.
+  const CUTOFF_MES_EMBUDO = 8;
+  const ventas = useMemo(() => {
+    const registradaMap = new Map(estadoRegistrada.map((v) => [v.ventaId, v]));
+    const completadas = estadoAprobadoJefatura
+      .filter((v) => v.mes >= CUTOFF_MES_EMBUDO && registradaMap.has(v.ventaId))
+      .map((v) => ({ agencia: registradaMap.get(v.ventaId).agencia, mes: v.mes }));
+    return [...ventasAllVehicle.filter((v) => v.mes < CUTOFF_MES_EMBUDO), ...completadas];
+  }, [ventasAllVehicle, estadoRegistrada, estadoAprobadoJefatura]);
 
   const matchesExcept = (v, exceptDim) => {
     if (exceptDim !== "agencia" && filters.agencia && v.agencia !== filters.agencia) return false;
     if (exceptDim !== "mes" && filters.mes && v.mes !== filters.mes) return false;
     return true;
   };
+  const matchesMes = (v) => !filters.mes || v.mes === filters.mes;
 
   const ventasFiltradas = useMemo(() => ventas.filter((v) => matchesExcept(v, null)), [ventas, filters]);
+
+  // EcuaprimasMatchLog (Aprobado Jefatura) no trae agencia en el payload de Pilot,
+  // asi que ese conteo y el total (union de ambos estados) solo se pueden filtrar
+  // por mes - el filtro de agencia solo aplica a Registrada y Pendientes.
+  const estadoRegistradaCount = useMemo(
+    () => estadoRegistrada.filter((v) => matchesExcept(v, null)).length,
+    [estadoRegistrada, filters]
+  );
+  const estadoAprobadoJefaturaCount = useMemo(
+    () => estadoAprobadoJefatura.filter(matchesMes).length,
+    [estadoAprobadoJefatura, filters.mes]
+  );
+  const estadoPendientesFiltrado = useMemo(
+    () => estadoPendientes.filter((v) => matchesExcept(v, null)),
+    [estadoPendientes, filters]
+  );
+  const estadoTotalCount = useMemo(() => {
+    const ids = new Set();
+    estadoRegistrada.filter(matchesMes).forEach((v) => ids.add(v.ventaId));
+    estadoAprobadoJefatura.filter(matchesMes).forEach((v) => ids.add(v.ventaId));
+    return ids.size;
+  }, [estadoRegistrada, estadoAprobadoJefatura, filters.mes]);
 
   const metaTotalPeriodo = useMemo(() => {
     const mesesIncluidos = filters.mes ? [filters.mes] : MESES_LABEL.map((_, i) => i + 1).filter((m) => m <= mesActual);
@@ -200,7 +241,7 @@ export default function AdminPerformance({ userEmail }) {
   ].filter(Boolean);
 
   return (
-    <AdminLayout userEmail={userEmail} title="Performance por Agencia">
+    <AdminLayout userEmail={userEmail} title="Performance por Agencia" backHref="/admin/bi">
       {loading ? (
         <p className="text-gray-500 text-sm">Cargando ventas en vivo...</p>
       ) : (
@@ -233,6 +274,12 @@ export default function AdminPerformance({ userEmail }) {
             </div>
           )}
 
+          <p className="text-xs text-gray-400 mb-2">
+            Prueba: "Ventas acumuladas YTD" combina dos fuentes — antes de agosto 2026 usa la fecha de
+            facturación de fábrica, y desde agosto usa las ventas que completaron las dos etapas del
+            proceso (Registrada + Aprobado Jefatura), que es desde cuando esos webhooks de Pilot están
+            conectados.
+          </p>
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5 mb-6">
             <KpiCard icon={ChartBarIcon} label="Ventas acumuladas YTD" value={kpis.totalVentas} tone="gray" delay={0} />
             <KpiCard icon={FlagIcon} label="Presupuesto acumulado YTD" value={kpis.metaTotalPeriodo} tone="blue" delay={0.05} />
@@ -253,6 +300,99 @@ export default function AdminPerformance({ userEmail }) {
               tone={kpis.pctMesActual >= 95 ? "green" : kpis.pctMesActual >= 80 ? "orange" : "red"}
               delay={0.2}
             />
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
+            <h3 className="font-semibold text-gray-800 mb-1">Ventas por estado (webhooks Pilot en vivo)</h3>
+            <p className="text-xs text-gray-400 mb-4">
+              "Registrada" = el cliente confirmó que compra. "Aprobado Jefatura" = el asesor llevó la
+              venta al jefe y se revisaron papeles/pagos. Es una señal en tiempo real por etapa del
+              proceso (desde agosto 2026), distinta de las ventas cerradas por facturación que se usan
+              arriba para el cumplimiento YTD.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="rounded-lg bg-gray-50 p-4">
+                <div className="text-2xl font-bold text-gray-800 tabular-nums">
+                  <AnimatedNumber value={estadoTotalCount} />
+                </div>
+                <div className="text-xs text-gray-500 mt-0.5">Total en el embudo</div>
+              </div>
+              <div className="rounded-lg bg-gray-50 p-4">
+                <div className="text-2xl font-bold text-gray-800 tabular-nums">
+                  <AnimatedNumber value={estadoRegistradaCount} />
+                </div>
+                <div className="text-xs text-gray-500 mt-0.5">Registrada</div>
+              </div>
+              <div className="rounded-lg bg-gray-50 p-4">
+                <div className="text-2xl font-bold text-gray-800 tabular-nums">
+                  <AnimatedNumber value={estadoAprobadoJefaturaCount} />
+                </div>
+                <div className="text-xs text-gray-500 mt-0.5">Aprobado Jefatura</div>
+              </div>
+              <div className="rounded-lg bg-orange-50 p-4">
+                <div className="text-2xl font-bold text-orange-700 tabular-nums">
+                  <AnimatedNumber value={estadoPendientesFiltrado.length} />
+                </div>
+                <div className="text-xs text-orange-600 mt-0.5">Pendientes de aprobación</div>
+              </div>
+            </div>
+            {filters.agencia && (
+              <p className="text-[11px] text-gray-400 mt-3">
+                Pilot no envía la agencia en el webhook de "Aprobado Jefatura" — por eso "Total" y
+                "Aprobado Jefatura" no se filtran por agencia, solo por mes. "Registrada" y
+                "Pendientes" sí.
+              </p>
+            )}
+
+            {estadoPendientesFiltrado.length > 0 && (
+              <div className="mt-5 overflow-x-auto">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                  Top 10 ventas registradas con más días esperando pasar a Aprobado Jefatura
+                </h4>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-400 text-xs uppercase border-b">
+                      <th className="py-2 pr-2">Venta ID</th>
+                      <th className="py-2 pr-2">Vehículo</th>
+                      <th className="py-2 pr-2">Vendedor</th>
+                      <th className="py-2 pr-2">Agencia</th>
+                      <th className="py-2 pr-2 text-right">Registrada</th>
+                      <th className="py-2 pr-2 text-right">Días esperando</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...estadoPendientesFiltrado]
+                      .sort((a, b) => new Date(a.fechaAlta) - new Date(b.fechaAlta))
+                      .slice(0, 10)
+                      .map((p) => {
+                        const dias = Math.floor((Date.now() - new Date(p.fechaAlta).getTime()) / 86400000);
+                        return (
+                          <tr key={p.ventaId} className="border-b last:border-0">
+                            <td className="py-2 pr-2 text-gray-500">{p.ventaId}</td>
+                            <td className="py-2 pr-2 font-medium text-gray-800">
+                              {p.marca} {p.modelo}
+                            </td>
+                            <td className="py-2 pr-2 text-gray-500">{p.vendedor || "—"}</td>
+                            <td className="py-2 pr-2 text-gray-500">{p.agencia || "—"}</td>
+                            <td className="py-2 pr-2 text-right tabular-nums text-gray-500">
+                              {new Date(p.fechaAlta).toLocaleDateString("es-EC")}
+                            </td>
+                            <td className="py-2 pr-2 text-right tabular-nums">
+                              <span
+                                className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                                  dias > 7 ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-600"
+                                }`}
+                              >
+                                {dias}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2 mb-6">

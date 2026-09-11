@@ -60,7 +60,7 @@ export default function AdminMetas({ userEmail }) {
     ) || 0;
 
   return (
-    <AdminLayout userEmail={userEmail} title="Metas de Ventas por Agencia">
+    <AdminLayout userEmail={userEmail} title="Metas de Ventas por Agencia" backHref="/admin/bi">
       <p className="text-sm text-gray-500 mb-4">
         Objetivo mensual de unidades a vender por agencia. No sale de Pilot ni de ningún otro
         sistema - se define aquí manualmente y alimenta el dashboard de Performance por Agencia.
