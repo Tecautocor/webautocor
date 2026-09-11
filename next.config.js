@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Permite compilar a una carpeta aparte durante el deploy (ver deploy.sh)
+  // sin tocar el .next que el proceso viejo sigue sirviendo mientras compila.
+  distDir: process.env.NEXT_BUILD_DIR || ".next",
   reactStrictMode: true,
   // swcMinify ya no es necesario en Next 15, puedes quitarlo
   experimental: {

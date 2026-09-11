@@ -6,18 +6,14 @@ echo '📥 Descargando cambios de GitHub...'
 git pull origin main
 echo '📦 Instalando dependencias...'
 npm install --no-audit --no-fund
-echo '⏸️  Deteniendo servidor (next build limpia .next, no puede convivir con el proceso viejo leyendo esos archivos)...'
-pm2 stop ecosystem.config.js
-echo '📦 Compilando...'
-if npm run build; then
-  echo '▶️  Iniciando servidor con el build nuevo...'
-  pm2 start ecosystem.config.js
-else
-  echo '❌ El build falló — .next quedó a medio regenerar (next build lo limpia al iniciar). Intentando levantar el proceso igual para no dejarlo "stopped", pero probablemente sirva errores hasta corregir el código y desplegar de nuevo.'
-  pm2 start ecosystem.config.js
-  pm2 list
-  exit 1
-fi
+echo '📦 Compilando en carpeta aparte (.next-new) - el servidor actual sigue sirviendo tráfico normal mientras tanto...'
+rm -rf .next-new
+NEXT_BUILD_DIR=.next-new npm run build
+echo '🔁 Build listo - haciendo swap de .next y reiniciando (downtime de pocos segundos, no minutos)...'
+rm -rf .next-old
+mv .next .next-old 2>/dev/null || true
+mv .next-new .next
+pm2 restart ecosystem.config.js
 echo '⏳ Calentando caché...'
 sleep 5
 curl -s -X POST http://localhost:3000/api/token > /dev/null
