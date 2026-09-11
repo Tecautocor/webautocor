@@ -275,7 +275,7 @@ export default function AdminPerformance({ userEmail }) {
           )}
 
           <p className="text-xs text-gray-400 mb-2">
-            Prueba: "Ventas acumuladas YTD" combina dos fuentes — antes de agosto 2026 usa la fecha de
+            Prueba: “Ventas acumuladas YTD” combina dos fuentes — antes de agosto 2026 usa la fecha de
             facturación de fábrica, y desde agosto usa las ventas que completaron las dos etapas del
             proceso (Registrada + Aprobado Jefatura), que es desde cuando esos webhooks de Pilot están
             conectados.
@@ -305,7 +305,7 @@ export default function AdminPerformance({ userEmail }) {
           <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
             <h3 className="font-semibold text-gray-800 mb-1">Ventas por estado (webhooks Pilot en vivo)</h3>
             <p className="text-xs text-gray-400 mb-4">
-              "Registrada" = el cliente confirmó que compra. "Aprobado Jefatura" = el asesor llevó la
+              “Registrada” = el cliente confirmó que compra. “Aprobado Jefatura” = el asesor llevó la
               venta al jefe y se revisaron papeles/pagos. Es una señal en tiempo real por etapa del
               proceso (desde agosto 2026), distinta de las ventas cerradas por facturación que se usan
               arriba para el cumplimiento YTD.
@@ -338,9 +338,9 @@ export default function AdminPerformance({ userEmail }) {
             </div>
             {filters.agencia && (
               <p className="text-[11px] text-gray-400 mt-3">
-                Pilot no envía la agencia en el webhook de "Aprobado Jefatura" — por eso "Total" y
-                "Aprobado Jefatura" no se filtran por agencia, solo por mes. "Registrada" y
-                "Pendientes" sí.
+                Pilot no envía la agencia en el webhook de “Aprobado Jefatura” — por eso “Total” y
+                “Aprobado Jefatura” no se filtran por agencia, solo por mes. “Registrada” y
+                “Pendientes” sí.
               </p>
             )}
 
