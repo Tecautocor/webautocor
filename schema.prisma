@@ -9,18 +9,21 @@ datasource db {
 }
 
 model SharedSecret {
-  id           Int       @id @default(autoincrement())
-  token        String    @unique @db.VarChar(64)
-  label        String    @db.VarChar(255)
-  ciphertext   String    @db.Text
-  iv           String    @db.VarChar(32)
-  authTag      String    @db.VarChar(32)
-  createdBy    String?   @db.VarChar(255)
-  createdAt    DateTime  @default(now())
-  expiresAt    DateTime
-  revoked      Boolean   @default(false)
-  viewCount    Int       @default(0)
-  lastViewedAt DateTime?
+  id             Int       @id @default(autoincrement())
+  token          String    @unique @db.VarChar(64)
+  label          String    @db.VarChar(255)
+  ciphertext     String    @db.Text
+  iv             String    @db.VarChar(32)
+  authTag        String    @db.VarChar(32)
+  pinHash        String?   @db.VarChar(255)
+  pinSalt        String?   @db.VarChar(32)
+  failedAttempts Int       @default(0)
+  createdBy      String?   @db.VarChar(255)
+  createdAt      DateTime  @default(now())
+  expiresAt      DateTime
+  revoked        Boolean   @default(false)
+  viewCount      Int       @default(0)
+  lastViewedAt   DateTime?
 }
 
 model Banner {

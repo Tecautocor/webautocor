@@ -23,8 +23,10 @@ export default function AdminSecretos({ userEmail }) {
   const [label, setLabel] = useState("");
   const [value, setValue] = useState("");
   const [days, setDays] = useState(14);
+  const [pin, setPin] = useState("");
   const [creating, setCreating] = useState(false);
   const [newLink, setNewLink] = useState(null);
+  const [newPin, setNewPin] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -41,20 +43,27 @@ export default function AdminSecretos({ userEmail }) {
   async function handleCreate(e) {
     e.preventDefault();
     if (!label.trim() || !value.trim()) return;
+    if (pin && !/^\d{4}$/.test(pin)) {
+      alert("El código debe ser de 4 dígitos");
+      return;
+    }
     setCreating(true);
     setNewLink(null);
+    setNewPin(null);
     const res = await fetch("/api/admin/secrets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ label, value, days }),
+      body: JSON.stringify({ label, value, days, pin: pin || undefined }),
     });
     const json = await res.json();
     setCreating(false);
     if (res.ok) {
       setNewLink(`${window.location.origin}/secreto/${json.token}`);
+      setNewPin(pin || null);
       setLabel("");
       setValue("");
       setDays(14);
+      setPin("");
       load();
     }
   }
@@ -72,6 +81,8 @@ export default function AdminSecretos({ userEmail }) {
           Genera un link de un solo secreto (API key, contraseña, etc.) para compartir por correo
           sin escribirlo en texto plano. El valor queda cifrado en la base de datos; el link solo
           contiene un token aleatorio y expira en la fecha que elijas (o antes, si lo revocás).
+          Opcionalmente podés pedir un código de 4 dígitos para verlo — se bloquea solo después de
+          5 intentos fallidos.
         </p>
 
         <form onSubmit={handleCreate} className="bg-white rounded-lg shadow p-5 mb-8 space-y-4">
@@ -98,19 +109,40 @@ export default function AdminSecretos({ userEmail }) {
               required
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Expira en (días)
-            </label>
-            <input
-              type="number"
-              min={1}
-              max={90}
-              value={days}
-              onChange={(e) => setDays(e.target.value)}
-              className="w-24 border rounded px-3 py-2 text-sm"
-            />
+          <div className="flex gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Expira en (días)
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={90}
+                value={days}
+                onChange={(e) => setDays(e.target.value)}
+                className="w-24 border rounded px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Código de confirmación (opcional)
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={4}
+                placeholder="Ej. 5454"
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+                className="w-32 border rounded px-3 py-2 text-sm text-center tracking-widest"
+              />
+            </div>
           </div>
+          <p className="text-xs text-gray-500 -mt-2">
+            Si ponés un código de 4 dígitos, quien reciba el link también va a necesitarlo para ver
+            el secreto — compartíselo por otro canal (WhatsApp, llamada), nunca por el mismo correo
+            del link. No queda guardado en texto plano, así que no se puede recuperar después.
+          </p>
           <button
             type="submit"
             disabled={creating}
@@ -120,8 +152,8 @@ export default function AdminSecretos({ userEmail }) {
           </button>
 
           {newLink && (
-            <div className="bg-green-50 border border-green-200 rounded p-3 text-sm">
-              <div className="font-medium text-green-800 mb-1">Link generado:</div>
+            <div className="bg-green-50 border border-green-200 rounded p-3 text-sm space-y-2">
+              <div className="font-medium text-green-800">Link generado:</div>
               <div className="flex items-center gap-2">
                 <code className="flex-1 break-all text-xs">{newLink}</code>
                 <button
@@ -132,6 +164,12 @@ export default function AdminSecretos({ userEmail }) {
                   Copiar
                 </button>
               </div>
+              {newPin && (
+                <p className="text-green-800">
+                  Código: <strong>{newPin}</strong> — compartilo por otro canal, distinto de donde
+                  mandes el link. No se vuelve a mostrar.
+                </p>
+              )}
             </div>
           )}
         </form>
@@ -158,6 +196,8 @@ export default function AdminSecretos({ userEmail }) {
                       {formatDateTime(s.expiresAt)} · Visto {s.viewCount}{" "}
                       {s.viewCount === 1 ? "vez" : "veces"}
                       {s.lastViewedAt ? ` (última ${formatDateTime(s.lastViewedAt)})` : ""}
+                      {s.hasPin ? " · con código" : ""}
+                      {s.failedAttempts > 0 ? ` · ${s.failedAttempts} intento(s) fallido(s)` : ""}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">

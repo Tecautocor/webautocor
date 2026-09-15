@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]";
 import db from "../../../../lib/db";
-import { encryptSecret, generateToken } from "../../../../lib/secretShare";
+import { encryptSecret, generateToken, hashPin } from "../../../../lib/secretShare";
 
 export default async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
@@ -22,21 +22,28 @@ export default async function handler(req, res) {
         revoked: true,
         viewCount: true,
         lastViewedAt: true,
+        pinHash: true,
+        failedAttempts: true,
       },
     });
-    return res.status(200).json({ entitydata: secrets });
+    const entitydata = secrets.map(({ pinHash, ...rest }) => ({ ...rest, hasPin: !!pinHash }));
+    return res.status(200).json({ entitydata });
   }
 
   if (req.method === "POST") {
-    const { label, value, days } = req.body || {};
+    const { label, value, days, pin } = req.body || {};
     if (!label?.trim() || !value?.trim()) {
       return res.status(400).json({ message: "Falta label o value" });
+    }
+    if (pin && !/^\d{4}$/.test(pin)) {
+      return res.status(400).json({ message: "El código debe ser de 4 dígitos" });
     }
 
     const ttlDays = Number(days) > 0 ? Number(days) : 14;
     const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000);
     const token = generateToken();
     const { ciphertext, iv, authTag } = encryptSecret(value.trim());
+    const { pinHash, pinSalt } = pin ? hashPin(pin) : { pinHash: null, pinSalt: null };
 
     const created = await db.sharedSecret.create({
       data: {
@@ -45,6 +52,8 @@ export default async function handler(req, res) {
         ciphertext,
         iv,
         authTag,
+        pinHash,
+        pinSalt,
         createdBy: session.user?.email || null,
         expiresAt,
       },
