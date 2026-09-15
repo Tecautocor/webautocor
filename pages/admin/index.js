@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { requireAdminSession } from "../../lib/adminAuth";
 import AdminLayout from "../../components/admin/AdminLayout";
-import { PencilSquareIcon, ShieldCheckIcon, ChartBarSquareIcon } from "@heroicons/react/24/outline";
+import {
+  PencilSquareIcon,
+  ShieldCheckIcon,
+  ChartBarSquareIcon,
+  KeyIcon,
+} from "@heroicons/react/24/outline";
 
 export async function getServerSideProps(context) {
   return requireAdminSession(context);
@@ -27,6 +32,13 @@ const MODULES = [
     description: "Metas, Inventario, Performance, Embudo de Conversión y Análisis Comercial.",
     href: "/admin/bi",
     icon: ChartBarSquareIcon,
+  },
+  {
+    title: "Compartir accesos",
+    description:
+      "Generar links de un solo secreto (API keys, contraseñas) para compartir con terceros sin escribirlos en texto plano.",
+    href: "/admin/secretos",
+    icon: KeyIcon,
   },
 ];
 
