@@ -60,7 +60,7 @@ export default function AdminMetas({ userEmail }) {
     ) || 0;
 
   return (
-    <AdminLayout userEmail={userEmail} title="Metas de Ventas por Agencia" backHref="/admin/bi">
+    <AdminLayout userEmail={userEmail} title="Metas de Ventas por Agencia" backHref="/admin/bi" wide>
       <p className="text-sm text-gray-500 mb-4">
         Objetivo mensual de unidades a vender por agencia. No sale de Pilot ni de ningún otro
         sistema - se define aquí manualmente y alimenta el dashboard de Performance por Agencia.
@@ -71,7 +71,7 @@ export default function AdminMetas({ userEmail }) {
         <select
           value={anio}
           onChange={(e) => setAnio(parseInt(e.target.value, 10))}
-          className="border rounded px-2 py-1 text-sm"
+          className="border rounded pl-2 pr-7 py-1 text-sm"
         >
           {[anio - 1, anio, anio + 1].map((y) => (
             <option key={y} value={y}>
