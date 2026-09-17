@@ -12,14 +12,15 @@ const HOY = new Date();
 const ANIO_ACTUAL = HOY.getFullYear();
 const MES_ACTUAL = HOY.getMonth() + 1;
 
-// Solo coloreamos meses que ya terminaron - el mes en curso todavia puede
-// alcanzar la meta, mostrarlo en rojo a mitad de mes seria enganoso.
-function mesYaCerrado(anio, mes) {
-  return anio < ANIO_ACTUAL || (anio === ANIO_ACTUAL && mes < MES_ACTUAL);
+// Coloreamos meses ya transcurridos, incluido el mes en curso (con lo
+// vendido hasta hoy) - los meses futuros quedan neutros, todavia no hay nada
+// que evaluar.
+function mesEvaluable(anio, mes) {
+  return anio < ANIO_ACTUAL || (anio === ANIO_ACTUAL && mes <= MES_ACTUAL);
 }
 
 function claseCumplimiento(anio, mes, metaUnidades, real) {
-  if (!mesYaCerrado(anio, mes) || !metaUnidades) return "border-gray-200";
+  if (!mesEvaluable(anio, mes) || !metaUnidades) return "border-gray-200";
   const ratio = real / metaUnidades;
   if (ratio >= 1) return "bg-green-50 border-green-200";
   if (ratio >= 0.8) return "bg-yellow-50 border-yellow-200";
@@ -112,7 +113,7 @@ export default function AdminMetas({ userEmail }) {
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded bg-red-50 border border-red-200" /> no cumplida
         </span>
-        <span>— solo en meses ya cerrados</span>
+        <span>— meses transcurridos, incluido el actual (con lo vendido hasta hoy)</span>
       </div>
 
       <div className="bg-white rounded-lg shadow p-4 overflow-x-auto">
