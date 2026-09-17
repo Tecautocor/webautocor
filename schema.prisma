@@ -121,6 +121,7 @@ model EcuaprimasMatchLog {
   cotizacionEnviada    Boolean  @default(false)
   enviadoA             String?
   errorCotizacion      String?
+  pdfUrl               String?
   observacionesPilotOk Boolean  @default(false)
   errorObservaciones   String?
 }

@@ -1,8 +1,20 @@
+import fs from "fs";
+import path from "path";
+import crypto from "crypto";
 import { matchVehiculo } from "../../../lib/ecuaprimasCatalogo";
 import { cotizar, descargarDocumento } from "../../../lib/ecuaprimasApi";
 import { sendMailGraph } from "../../../lib/graphMail";
 import { leerVenta, actualizarObservacionesVenta } from "../../../lib/pilotSalesApi";
 import db from "../../../lib/db";
+
+const COTIZACIONES_DIR = path.join(process.cwd(), "uploads", "cotizaciones");
+
+function guardarPdfCotizacion(buffer) {
+  fs.mkdirSync(COTIZACIONES_DIR, { recursive: true });
+  const nombreArchivo = `${crypto.randomBytes(16).toString("hex")}.pdf`;
+  fs.writeFileSync(path.join(COTIZACIONES_DIR, nombreArchivo), buffer);
+  return `https://autocor.com.ec/api/uploads/cotizaciones/${nombreArchivo}`;
+}
 
 export const config = {
   api: {
@@ -74,6 +86,7 @@ async function procesarCotizacion({ venta, vehiculo, cliente, vendedor, match })
   }
 
   const pdfBuffer = await descargarDocumento(cotizacion.documento);
+  const pdfUrl = guardarPdfCotizacion(pdfBuffer);
 
   await sendMailGraph({
     to: vendedor.email,
@@ -97,15 +110,16 @@ async function procesarCotizacion({ venta, vehiculo, cliente, vendedor, match })
     ok: true,
     numeroCertificado: cotizacion.numero_certificado,
     enviadoA: vendedor.email,
+    pdfUrl,
   };
 }
 
-async function registrarObservacionesPilot({ guid, numeroCertificado }) {
+async function registrarObservacionesPilot({ guid, numeroCertificado, pdfUrl }) {
   if (!guid) {
     return { ok: false, error: "sin_guid_venta" };
   }
   const ventaActual = await leerVenta(guid);
-  const nota = `[Cotizador Ecuaprimas] Certificado ${numeroCertificado} generado el ${new Date().toISOString()}`;
+  const nota = `[Cotizador Ecuaprimas] Certificado ${numeroCertificado} generado el ${new Date().toISOString()}. PDF: ${pdfUrl}`;
   const observacionesNuevas = ventaActual.observations
     ? `${ventaActual.observations}\n${nota}`
     : nota;
@@ -154,6 +168,7 @@ async function handler(req, res) {
       observacionesResultado = await registrarObservacionesPilot({
         guid: venta.guid,
         numeroCertificado: cotizacionResultado.numeroCertificado,
+        pdfUrl: cotizacionResultado.pdfUrl,
       });
       console.log("pilotSaleWebhook: resultado observaciones Pilot", venta.id, JSON.stringify(observacionesResultado));
     } catch (err) {
@@ -180,6 +195,7 @@ async function handler(req, res) {
         numeroCertificado: cotizacionResultado?.numeroCertificado || null,
         cotizacionEnviada: !!cotizacionResultado?.enviadoA,
         enviadoA: cotizacionResultado?.enviadoA || null,
+        pdfUrl: cotizacionResultado?.pdfUrl || null,
         errorCotizacion: cotizacionResultado && !cotizacionResultado.ok ? cotizacionResultado.error : null,
         observacionesPilotOk: !!observacionesResultado?.ok,
         errorObservaciones: observacionesResultado && !observacionesResultado.ok ? observacionesResultado.error : null,

@@ -21,6 +21,7 @@ const CONTENT_TYPES = {
   ".jpeg": "image/jpeg",
   ".png": "image/png",
   ".webp": "image/webp",
+  ".pdf": "application/pdf",
 };
 
 async function handler(req, res) {

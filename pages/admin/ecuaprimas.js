@@ -152,6 +152,19 @@ export default function AdminEcuaprimas({ userEmail }) {
                   {e.cotizacionEnviada && (
                     <div className="text-blue-600 mt-1">
                       Certificado {e.numeroCertificado} — enviado a {e.enviadoA}
+                      {e.pdfUrl && (
+                        <>
+                          {" · "}
+                          <a
+                            href={e.pdfUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline"
+                          >
+                            ver PDF
+                          </a>
+                        </>
+                      )}
                     </div>
                   )}
                   {!e.cotizacionEnviada && e.errorCotizacion && (
