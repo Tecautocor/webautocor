@@ -119,7 +119,7 @@ export default function AdminMetas({ userEmail }) {
                             onBlur={(e) => {
                               if (e.target.value !== "") guardarCelda(row.agencia, m.mes, e.target.value);
                             }}
-                            className={`w-14 text-center border rounded py-0.5 text-sm ${
+                            className={`w-20 text-center border rounded py-1 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
                               savingKey === key ? "bg-yellow-50 border-yellow-300" : "border-gray-200"
                             }`}
                           />

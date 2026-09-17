@@ -8,6 +8,8 @@ async function listarAgencias() {
   const rows = await db.$queryRawUnsafe(
     `SELECT DISTINCT owner_branch_code AS agencia FROM AllVehicle
      WHERE owner_branch_code IS NOT NULL AND owner_branch_code != ''
+       AND owner_branch_code != 'Gerencias'
+       AND owner_branch_code NOT LIKE 'Taller%'
      ORDER BY agencia ASC`
   );
   return rows.map((r) => r.agencia);
