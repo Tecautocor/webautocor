@@ -184,14 +184,14 @@ export default function AdminMetas({ userEmail }) {
               })}
             </tbody>
             <tfoot>
-              <tr className="border-t-2 border-gray-300">
-                <td className="py-2 pr-3 font-bold text-gray-800 sticky left-0 bg-white">
+              <tr className="border-t-4 border-gray-700 bg-gray-800">
+                <td className="py-3 pr-3 font-bold text-white uppercase text-sm tracking-wide sticky left-0 bg-gray-800">
                   Total Empresa
                 </td>
                 {totalesPorMes.map((m) => (
-                  <td key={m.mes} className="py-1 px-1 text-center">
+                  <td key={m.mes} className="py-2 px-1 text-center">
                     <div
-                      className={`w-20 mx-auto rounded py-1 text-sm font-semibold text-gray-800 border ${claseCumplimiento(
+                      className={`w-20 mx-auto rounded py-1.5 text-base font-bold text-gray-800 border-2 ${claseCumplimiento(
                         anio,
                         m.mes,
                         m.metaUnidades,
@@ -202,7 +202,7 @@ export default function AdminMetas({ userEmail }) {
                     </div>
                   </td>
                 ))}
-                <td className="py-1 pl-3 text-right font-bold text-gray-800">
+                <td className="py-2 pl-3 text-right font-bold text-white text-lg">
                   {totalGeneralAnual}
                 </td>
               </tr>
