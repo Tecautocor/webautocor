@@ -78,6 +78,24 @@ export default function AdminMetas({ userEmail }) {
       0
     ) || 0;
 
+  // Meta y venta real de toda la empresa por mes - suma automática de las
+  // agencias, no se guarda aparte en la base (se deriva siempre en vivo).
+  const totalesPorMes = Array.from({ length: 12 }, (_, i) => {
+    const mes = i + 1;
+    return (data?.grid || []).reduce(
+      (acc, row) => {
+        const celda = row.meses.find((m) => m.mes === mes);
+        return {
+          mes,
+          metaUnidades: acc.metaUnidades + (celda?.metaUnidades || 0),
+          real: acc.real + (celda?.real || 0),
+        };
+      },
+      { mes, metaUnidades: 0, real: 0 }
+    );
+  });
+  const totalGeneralAnual = totalesPorMes.reduce((s, m) => s + m.metaUnidades, 0);
+
   return (
     <AdminLayout userEmail={userEmail} title="Metas de Ventas por Agencia" backHref="/admin/bi" wide>
       <p className="text-sm text-gray-500 mb-4">
@@ -165,6 +183,30 @@ export default function AdminMetas({ userEmail }) {
                 );
               })}
             </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-gray-300">
+                <td className="py-2 pr-3 font-bold text-gray-800 sticky left-0 bg-white">
+                  Total Empresa
+                </td>
+                {totalesPorMes.map((m) => (
+                  <td key={m.mes} className="py-1 px-1 text-center">
+                    <div
+                      className={`w-20 mx-auto rounded py-1 text-sm font-semibold text-gray-800 border ${claseCumplimiento(
+                        anio,
+                        m.mes,
+                        m.metaUnidades,
+                        m.real
+                      )}`}
+                    >
+                      {m.metaUnidades || "—"}
+                    </div>
+                  </td>
+                ))}
+                <td className="py-1 pl-3 text-right font-bold text-gray-800">
+                  {totalGeneralAnual}
+                </td>
+              </tr>
+            </tfoot>
           </table>
         )}
       </div>
