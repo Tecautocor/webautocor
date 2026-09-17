@@ -8,6 +8,24 @@ export async function getServerSideProps(context) {
 
 const MESES_LABEL = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
+const HOY = new Date();
+const ANIO_ACTUAL = HOY.getFullYear();
+const MES_ACTUAL = HOY.getMonth() + 1;
+
+// Solo coloreamos meses que ya terminaron - el mes en curso todavia puede
+// alcanzar la meta, mostrarlo en rojo a mitad de mes seria enganoso.
+function mesYaCerrado(anio, mes) {
+  return anio < ANIO_ACTUAL || (anio === ANIO_ACTUAL && mes < MES_ACTUAL);
+}
+
+function claseCumplimiento(anio, mes, metaUnidades, real) {
+  if (!mesYaCerrado(anio, mes) || !metaUnidades) return "border-gray-200";
+  const ratio = real / metaUnidades;
+  if (ratio >= 1) return "bg-green-50 border-green-200";
+  if (ratio >= 0.8) return "bg-yellow-50 border-yellow-200";
+  return "bg-red-50 border-red-200";
+}
+
 export default function AdminMetas({ userEmail }) {
   const [anio, setAnio] = useState(new Date().getFullYear());
   const [data, setData] = useState(null);
@@ -84,6 +102,19 @@ export default function AdminMetas({ userEmail }) {
         </span>
       </div>
 
+      <div className="flex items-center gap-4 mb-3 text-xs text-gray-500">
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded bg-green-50 border border-green-200" /> meta cumplida
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded bg-yellow-50 border border-yellow-200" /> cerca (80-99%)
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded bg-red-50 border border-red-200" /> no cumplida
+        </span>
+        <span>— solo en meses ya cerrados</span>
+      </div>
+
       <div className="bg-white rounded-lg shadow p-4 overflow-x-auto">
         {loading && <p className="text-gray-500 text-sm">Cargando...</p>}
         {!loading && data && (
@@ -120,7 +151,9 @@ export default function AdminMetas({ userEmail }) {
                               if (e.target.value !== "") guardarCelda(row.agencia, m.mes, e.target.value);
                             }}
                             className={`w-20 text-center border rounded py-1 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
-                              savingKey === key ? "bg-yellow-50 border-yellow-300" : "border-gray-200"
+                              savingKey === key
+                                ? "bg-blue-50 border-blue-300"
+                                : claseCumplimiento(anio, m.mes, m.metaUnidades, m.real)
                             }`}
                           />
                         </td>
