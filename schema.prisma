@@ -121,6 +121,8 @@ model EcuaprimasMatchLog {
   cotizacionEnviada    Boolean  @default(false)
   enviadoA             String?
   errorCotizacion      String?
+  observacionesPilotOk Boolean  @default(false)
+  errorObservaciones   String?
 }
 
 // Log crudo del webhook de Ventas de Pilot (entidad "Ventas"). Guarda el

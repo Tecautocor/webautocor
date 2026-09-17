@@ -131,6 +131,16 @@ export default function AdminEcuaprimas({ userEmail }) {
                       Cotización falló
                     </span>
                   )}
+                  {e.cotizacionEnviada && e.observacionesPilotOk && (
+                    <span className="text-xs font-semibold text-purple-700 bg-purple-100 px-2 py-1 rounded whitespace-nowrap">
+                      Registrado en Pilot
+                    </span>
+                  )}
+                  {e.cotizacionEnviada && !e.observacionesPilotOk && (
+                    <span className="text-xs font-semibold text-gray-600 bg-gray-100 px-2 py-1 rounded whitespace-nowrap">
+                      No registrado en Pilot
+                    </span>
+                  )}
                 </div>
               </div>
               {e.matchOk ? (

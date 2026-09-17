@@ -1,6 +1,7 @@
 import { matchVehiculo } from "../../../lib/ecuaprimasCatalogo";
 import { cotizar, descargarDocumento } from "../../../lib/ecuaprimasApi";
 import { sendMailGraph } from "../../../lib/graphMail";
+import { leerVenta, actualizarObservacionesVenta } from "../../../lib/pilotSalesApi";
 import db from "../../../lib/db";
 
 export const config = {
@@ -99,6 +100,19 @@ async function procesarCotizacion({ venta, vehiculo, cliente, vendedor, match })
   };
 }
 
+async function registrarObservacionesPilot({ guid, numeroCertificado }) {
+  if (!guid) {
+    return { ok: false, error: "sin_guid_venta" };
+  }
+  const ventaActual = await leerVenta(guid);
+  const nota = `[Cotizador Ecuaprimas] Certificado ${numeroCertificado} generado el ${new Date().toISOString()}`;
+  const observacionesNuevas = ventaActual.observations
+    ? `${ventaActual.observations}\n${nota}`
+    : nota;
+  await actualizarObservacionesVenta(guid, observacionesNuevas);
+  return { ok: true };
+}
+
 async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(404).end();
@@ -134,6 +148,20 @@ async function handler(req, res) {
     }
   }
 
+  let observacionesResultado = null;
+  if (cotizacionResultado?.ok) {
+    try {
+      observacionesResultado = await registrarObservacionesPilot({
+        guid: venta.guid,
+        numeroCertificado: cotizacionResultado.numeroCertificado,
+      });
+      console.log("pilotSaleWebhook: resultado observaciones Pilot", venta.id, JSON.stringify(observacionesResultado));
+    } catch (err) {
+      console.log("pilotSaleWebhook: error actualizando observaciones en Pilot", venta.id, err?.response?.data || err.message);
+      observacionesResultado = { ok: false, error: err?.response?.data?.message || err.message };
+    }
+  }
+
   try {
     await db.ecuaprimasMatchLog.create({
       data: {
@@ -153,13 +181,21 @@ async function handler(req, res) {
         cotizacionEnviada: !!cotizacionResultado?.enviadoA,
         enviadoA: cotizacionResultado?.enviadoA || null,
         errorCotizacion: cotizacionResultado && !cotizacionResultado.ok ? cotizacionResultado.error : null,
+        observacionesPilotOk: !!observacionesResultado?.ok,
+        errorObservaciones: observacionesResultado && !observacionesResultado.ok ? observacionesResultado.error : null,
       },
     });
   } catch (err) {
     console.log("pilotSaleWebhook: error guardando EcuaprimasMatchLog (no bloquea la respuesta)", err);
   }
 
-  return res.status(200).json({ ok: true, procesado: true, match, cotizacion: cotizacionResultado });
+  return res.status(200).json({
+    ok: true,
+    procesado: true,
+    match,
+    cotizacion: cotizacionResultado,
+    observacionesPilot: observacionesResultado,
+  });
 }
 
 export default handler;
