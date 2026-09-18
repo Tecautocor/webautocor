@@ -7,6 +7,11 @@ export const config = {
   },
 };
 
+function findPrice(prices, type) {
+  const entry = prices?.find((p) => p.type === type);
+  return entry ? Number(entry.value) + 0 : 0;
+}
+
 async function handler(req, res) {
   console.log('Se ejecuto api/loadAllVehicles ');
   let start = Date.now();
@@ -80,8 +85,8 @@ async function handler(req, res) {
                 : null,
             brand: item.brand,
             model: item.model,
-            prices: Number(item.prices[0].value) + 0,
-            purchase_price: Number(item.prices[1].value) + 0,
+            prices: findPrice(item.prices, "SALE_COST"),
+            purchase_price: findPrice(item.prices, "PURCHASE_COST"),
             year: Number(item.year) || 0,
             owner: item.factory.status.toUpperCase() === "SI" ? 1 : 0,
             home: item.factory.request_number.toUpperCase() === "SI" ? 1 : 0,

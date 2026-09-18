@@ -57,6 +57,23 @@ function semaforoColor(dias) {
   return RANGO_COLORS[b] || "#94a3b8";
 }
 
+function renderRangoLabel({ cx, cy, midAngle, innerRadius, outerRadius, value, payload }) {
+  const RADIAN = Math.PI / 180;
+  const radius = innerRadius + (outerRadius - innerRadius) / 2;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+  return (
+    <text x={x} y={y} textAnchor="middle" dominantBaseline="central">
+      <tspan x={x} dy="-0.3em" fill="#fff" fontSize={13} fontWeight={700}>
+        {value}
+      </tspan>
+      <tspan x={x} dy="1.2em" fill="rgba(255,255,255,0.85)" fontSize={10} fontWeight={500}>
+        {payload.pctValor.toFixed(0)}%
+      </tspan>
+    </text>
+  );
+}
+
 function groupCount(list, keyFn) {
   const map = new Map();
   for (const item of list) {
@@ -159,6 +176,7 @@ export default function AdminInventario({ userEmail }) {
       ? conDias.reduce((s, v) => s + v.diasEnStock, 0) / conDias.length
       : 0;
     const masDe90 = filtered.filter((v) => bucketRango(v.diasEnStock) === ">90").length;
+    const sinFactura = filtered.filter((v) => !v.conFactura).length;
 
     return {
       total,
@@ -166,15 +184,31 @@ export default function AdminInventario({ userEmail }) {
       edadPromedio,
       masDe90,
       masDe90Pct: total ? (masDe90 / total) * 100 : 0,
+      sinFactura,
+      sinFacturaPct: total ? (sinFactura / total) * 100 : 0,
     };
+  }, [filtered]);
+
+  const sinFacturaLista = useMemo(() => {
+    return filtered
+      .filter((v) => !v.conFactura)
+      .sort((a, b) => (b.diasEnStock ?? -1) - (a.diasEnStock ?? -1));
   }, [filtered]);
 
   const rangoData = useMemo(() => {
     const base = vehicles.filter((v) => matchesExcept(v, "rangoDias"));
     const counts = groupCount(base, (v) => bucketRango(v.diasEnStock));
+    const valores = new Map();
+    for (const v of base) {
+      const b = bucketRango(v.diasEnStock);
+      valores.set(b, (valores.get(b) || 0) + (v.valor || 0));
+    }
+    const valorTotalBase = base.reduce((s, v) => s + (v.valor || 0), 0);
     return RANGO_ORDER.filter((r) => counts.get(r)).map((r) => ({
       name: r,
       value: counts.get(r) || 0,
+      valor: valores.get(r) || 0,
+      pctValor: valorTotalBase ? ((valores.get(r) || 0) / valorTotalBase) * 100 : 0,
       color: RANGO_COLORS[r],
     }));
   }, [vehicles, filters]);
@@ -233,11 +267,11 @@ export default function AdminInventario({ userEmail }) {
       });
   }, [filtered]);
 
-  const top10Antiguos = useMemo(() => {
+  const top50Antiguos = useMemo(() => {
     return filtered
       .filter((v) => v.diasEnStock !== null)
       .sort((a, b) => b.diasEnStock - a.diasEnStock)
-      .slice(0, 10);
+      .slice(0, 50);
   }, [filtered]);
 
   const activeChips = [
@@ -280,7 +314,7 @@ export default function AdminInventario({ userEmail }) {
           </div>
 
           {/* KPIs */}
-          <div className="grid gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4 mb-6">
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5 mb-6">
             <KpiCard icon={CubeIcon} label="Inventario total" value={kpis.total} tone="gray" delay={0} />
             <KpiCard
               icon={ClockIcon}
@@ -305,6 +339,13 @@ export default function AdminInventario({ userEmail }) {
               tone="green"
               delay={0.15}
             />
+            <KpiCard
+              icon={ExclamationTriangleIcon}
+              label={`Sin factura de fábrica (${kpis.sinFacturaPct.toFixed(0)}%)`}
+              value={kpis.sinFactura}
+              tone="orange"
+              delay={0.2}
+            />
           </div>
 
           {/* Charts */}
@@ -324,6 +365,8 @@ export default function AdminInventario({ userEmail }) {
                     animationDuration={600}
                     onClick={(d) => toggleFilter("rangoDias", d.name)}
                     cursor="pointer"
+                    label={renderRangoLabel}
+                    labelLine={false}
                   >
                     {rangoData.map((entry) => (
                       <Cell
@@ -332,9 +375,10 @@ export default function AdminInventario({ userEmail }) {
                         opacity={filters.rangoDias && filters.rangoDias !== entry.name ? 0.3 : 1}
                       />
                     ))}
-                    <LabelList dataKey="value" position="inside" fill="#fff" fontSize={12} fontWeight={700} />
                   </Pie>
-                  <Tooltip formatter={(v, n) => [`${v} unidades`, n]} />
+                  <Tooltip
+                    formatter={(v, n, p) => [`${v} unidades — ${p.payload.pctValor.toFixed(1)}% del valor`, n]}
+                  />
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-3 justify-center mt-1">
@@ -451,9 +495,9 @@ export default function AdminInventario({ userEmail }) {
             </motion.div>
           </div>
 
-          {/* Tabla top 10 vehículos más antiguos */}
+          {/* Tabla top 50 vehículos más antiguos */}
           <div className="bg-white rounded-xl shadow-sm p-5 overflow-x-auto mb-6">
-            <h3 className="font-semibold text-gray-800 mb-1">Top 10 vehículos más antiguos</h3>
+            <h3 className="font-semibold text-gray-800 mb-1">Top 50 vehículos más antiguos</h3>
             <p className="text-xs text-gray-400 mb-3">
               Ordenado por días en stock (no por unidades) — mientras más días, mayor pérdida para el negocio.
             </p>
@@ -468,11 +512,12 @@ export default function AdminInventario({ userEmail }) {
                   <th className="py-2 pr-2 text-right">Año</th>
                   <th className="py-2 pr-2 text-right">Valor</th>
                   <th className="py-2 pr-2 text-right">Días en stock</th>
+                  <th className="py-2 pr-2 text-center">Factura</th>
                 </tr>
               </thead>
               <tbody>
                 <AnimatePresence mode="popLayout">
-                  {top10Antiguos.map((v, i) => (
+                  {top50Antiguos.map((v, i) => (
                     <motion.tr
                       key={v.placa || `${v.marca}-${v.modelo}-${i}`}
                       layout
@@ -501,14 +546,71 @@ export default function AdminInventario({ userEmail }) {
                           {v.diasEnStock}
                         </span>
                       </td>
+                      <td className="py-2 pr-2 text-center">
+                        {v.conFactura ? (
+                          <span className="text-green-600" title="Con factura de fábrica">✓</span>
+                        ) : (
+                          <span className="text-red-500 font-semibold" title="Sin factura de fábrica">✗</span>
+                        )}
+                      </td>
                     </motion.tr>
                   ))}
                 </AnimatePresence>
               </tbody>
             </table>
-            {top10Antiguos.length === 0 && (
+            {top50Antiguos.length === 0 && (
               <p className="text-gray-400 text-sm py-6 text-center">
                 No hay vehículos con días en stock que coincidan con los filtros seleccionados.
+              </p>
+            )}
+          </div>
+
+          {/* Tabla vehículos sin factura de fábrica */}
+          <div className="bg-white rounded-xl shadow-sm p-5 overflow-x-auto mb-6">
+            <h3 className="font-semibold text-gray-800 mb-1">Vehículos sin factura de fábrica</h3>
+            <p className="text-xs text-gray-400 mb-3">
+              Unidades que Pilot todavía no marca como facturadas por fábrica al concesionario —
+              ordenado por días en stock.
+            </p>
+            {sinFacturaLista.length > 0 ? (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-gray-400 text-xs uppercase border-b">
+                    <th className="py-2 pr-2">Vehículo</th>
+                    <th className="py-2 pr-2">Placa</th>
+                    <th className="py-2 pr-2">Agencia</th>
+                    <th className="py-2 pr-2 text-right">Valor</th>
+                    <th className="py-2 pr-2 text-right">Días en stock</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <AnimatePresence mode="popLayout">
+                    {sinFacturaLista.map((v, i) => (
+                      <motion.tr
+                        key={v.placa || `${v.marca}-${v.modelo}-${i}`}
+                        layout
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="border-b last:border-0"
+                      >
+                        <td className="py-2 pr-2 font-medium text-gray-800">
+                          {v.marca} {v.modelo}
+                        </td>
+                        <td className="py-2 pr-2 text-gray-500">{v.placa || "—"}</td>
+                        <td className="py-2 pr-2 text-gray-500">{v.agencia}</td>
+                        <td className="py-2 pr-2 text-right tabular-nums text-gray-500">{currency(v.valor)}</td>
+                        <td className="py-2 pr-2 text-right tabular-nums text-gray-500">
+                          {v.diasEnStock ?? "—"}
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
+                </tbody>
+              </table>
+            ) : (
+              <p className="text-gray-400 text-sm py-6 text-center">
+                Todos los vehículos filtrados tienen factura de fábrica.
               </p>
             )}
           </div>

@@ -35,13 +35,14 @@ async function handler(req, res) {
       brand: true,
       model: true,
       year: true,
-      prices: true,
+      purchase_price: true,
       type: true,
       days_in_stock: true,
       owner_branch_code: true,
       created_dt: true,
       license_plate: true,
       color: true,
+      factory_invoicing_dt: true,
     },
   });
 
@@ -56,13 +57,14 @@ async function handler(req, res) {
       marca: v.brand.trim(),
       modelo: v.model.trim(),
       anio: v.year || null,
-      valor: v.prices || 0,
+      valor: v.purchase_price || 0,
       carroceria: bucketCarroceria(v.type),
       diasEnStock: parseDays(v.days_in_stock),
       agencia: (v.owner_branch_code || "").trim() || "Sin agencia",
       fechaIngreso: v.created_dt,
       placa: (v.license_plate || "").trim() || null,
       color: (v.color || "").trim() || null,
+      conFactura: v.factory_invoicing_dt !== null,
     }));
 
   return res.status(200).json({ vehicles });
