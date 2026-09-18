@@ -14,41 +14,97 @@ async function handler(req, res) {
 
   const anioActual = new Date().getFullYear();
 
-  // Comparativa interanual: ahora usa la carga historica real del CSV de
-  // Pilot (VentaHistoricoImport, estado "Registrado") en vez de la
-  // aproximacion via AllVehicle/Vendido - cubre 2023 en adelante.
-  const ventasPorAnioMes = await db.$queryRawUnsafe(
-    `SELECT YEAR(fechaAprobacion) AS anio, MONTH(fechaAprobacion) AS mes, COUNT(*) AS n
-     FROM VentaHistoricoImport
-     WHERE fechaAprobacion IS NOT NULL
-     GROUP BY anio, mes
-     ORDER BY anio, mes`
-  );
+  // Comparativa interanual: carga historica real de Pilot (VentaHistoricoImport,
+  // cubre 2023-2026 completo, sin huecos, tras la importacion del 2026-09-17
+  // desde el export "sin filtro" de Pilot) combinada con el webhook en vivo
+  // (VentaWebhookLog, estado "Registrado") desde el 20-ago-2026.
+  // Se agrupa por fechaAlta (fecha en que se registro la venta), NO por
+  // fechaAprobacion - verificado contra el Tablero de control del cliente
+  // (2026-09-17): fechaAprobacion puede quedar varios dias/semanas despues de
+  // fechaAlta y corre ventas al mes siguiente, lo que descuadraba el conteo
+  // mensual contra lo que el cliente lleva. Con fechaAlta el match es cercano
+  // en todos los meses (dentro de un ~5%, salvo febrero).
+  // OJO: algunas ventas creadas antes del 20-ago llegan al webhook DESPUES de
+  // esa fecha (el webhook agrupa por fechaAlta, no por receivedAt) - por eso el
+  // historico excluye explicitamente cualquier ventaId que ya este en el
+  // webhook, para no contar la misma venta dos veces.
+  const [historicoPorAnioMes, enVivoPorAnioMes] = await Promise.all([
+    db.$queryRawUnsafe(
+      `SELECT YEAR(h.fechaAlta) AS anio, MONTH(h.fechaAlta) AS mes, COUNT(*) AS n
+       FROM VentaHistoricoImport h
+       LEFT JOIN (SELECT DISTINCT ventaId FROM VentaWebhookLog WHERE TRIM(estado) = 'REGISTRADO') w
+         ON w.ventaId = h.ventaId
+       WHERE h.fechaAlta IS NOT NULL AND w.ventaId IS NULL
+       GROUP BY anio, mes`
+    ),
+    db.$queryRawUnsafe(
+      `SELECT YEAR(fechaAlta) AS anio, MONTH(fechaAlta) AS mes, COUNT(DISTINCT ventaId) AS n
+       FROM VentaWebhookLog
+       WHERE TRIM(estado) = 'REGISTRADO' AND fechaAlta IS NOT NULL
+       GROUP BY anio, mes`
+    ),
+  ]);
+  const ventasPorAnioMesMap = new Map();
+  for (const r of [...historicoPorAnioMes, ...enVivoPorAnioMes]) {
+    const key = `${r.anio}-${r.mes}`;
+    ventasPorAnioMesMap.set(key, (ventasPorAnioMesMap.get(key) || 0) + Number(r.n));
+  }
+  const ventasPorAnioMes = [...ventasPorAnioMesMap.entries()]
+    .map(([key, n]) => {
+      const [anio, mes] = key.split("-").map(Number);
+      return { anio, mes, n };
+    })
+    .sort((a, b) => a.anio - b.anio || a.mes - b.mes);
 
   // Vendedores: SOLO el anio en curso (a proposito - un ranking con todo el
   // historico mezclaria vendedores que ya no trabajan ahi con el equipo
-  // actual). Usa el nombre real de vendedor de la carga historica.
-  const porVendedor = await db.$queryRawUnsafe(
-    `SELECT vendedorNombre AS vendedor, sucursal AS agencia, COUNT(*) AS n
-     FROM VentaHistoricoImport
-     WHERE YEAR(fechaAprobacion) = ?
-       AND vendedorNombre IS NOT NULL AND vendedorNombre != ''
-     GROUP BY vendedor, agencia
-     ORDER BY n DESC
-     LIMIT 30`,
-    anioActual
-  );
+  // actual). Combina la carga historica con el webhook en vivo en estado
+  // "Registrado" (desde el 20-ago-2026), agrupando por fechaAlta igual que
+  // arriba.
+  const [porVendedorHistorico, porVendedorEnVivo] = await Promise.all([
+    db.$queryRawUnsafe(
+      `SELECT h.vendedorNombre AS vendedor, h.sucursal AS agencia, COUNT(*) AS n
+       FROM VentaHistoricoImport h
+       LEFT JOIN (SELECT DISTINCT ventaId FROM VentaWebhookLog WHERE TRIM(estado) = 'REGISTRADO') w
+         ON w.ventaId = h.ventaId
+       WHERE YEAR(h.fechaAlta) = ? AND w.ventaId IS NULL
+         AND h.vendedorNombre IS NOT NULL AND h.vendedorNombre != ''
+       GROUP BY vendedor, agencia`,
+      anioActual
+    ),
+    db.$queryRawUnsafe(
+      `SELECT vendedorNombre AS vendedor, TRIM(sucursal) AS agencia, COUNT(DISTINCT ventaId) AS n
+       FROM VentaWebhookLog
+       WHERE TRIM(estado) = 'REGISTRADO' AND YEAR(fechaAlta) = ?
+         AND vendedorNombre IS NOT NULL AND vendedorNombre != ''
+       GROUP BY vendedor, agencia`,
+      anioActual
+    ),
+  ]);
+  const porVendedorMap = new Map();
+  for (const r of [...porVendedorHistorico, ...porVendedorEnVivo]) {
+    const key = `${r.vendedor}|${r.agencia}`;
+    porVendedorMap.set(key, {
+      vendedor: r.vendedor,
+      agencia: r.agencia,
+      n: (porVendedorMap.get(key)?.n || 0) + Number(r.n),
+    });
+  }
+  const porVendedor = [...porVendedorMap.values()].sort((a, b) => b.n - a.n).slice(0, 30);
 
   // Rentabilidad: baseline historico (para tener con que comparar) + eventos
   // reales en vivo del webhook (VentaWebhookLog) que se van acumulando desde
   // que se activo la regla en Pilot.
   const historicoAgg = await db.$queryRawUnsafe(
     `SELECT COUNT(*) AS n,
-            AVG(pctDescuento) AS descuentoProm,
-            SUM(CASE WHEN montoFinanciado > 0 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pctFinanciadas,
-            AVG(NULLIF(usadoRentabilidadEstimada, 0)) AS usadoRentabilidadProm,
-            AVG(totalTransaccion) AS ticketPromedio
-     FROM VentaHistoricoImport`
+            AVG(h.pctDescuento) AS descuentoProm,
+            SUM(CASE WHEN h.montoFinanciado > 0 THEN 1 ELSE 0 END) / COUNT(*) * 100 AS pctFinanciadas,
+            AVG(NULLIF(h.usadoRentabilidadEstimada, 0)) AS usadoRentabilidadProm,
+            AVG(h.totalTransaccion) AS ticketPromedio
+     FROM VentaHistoricoImport h
+     LEFT JOIN (SELECT DISTINCT ventaId FROM VentaWebhookLog WHERE TRIM(estado) = 'REGISTRADO') w
+       ON w.ventaId = h.ventaId
+     WHERE w.ventaId IS NULL`
   );
 
   const enVivo = await db.ventaWebhookLog.findMany({

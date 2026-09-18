@@ -136,15 +136,9 @@ export default function AdminAnalisisComercial({ userEmail }) {
                 <div className="bg-white rounded-xl shadow-sm p-5">
                   <h3 className="font-semibold text-gray-800 mb-1">Ventas cerradas por mes, comparado año a año</h3>
                   <p className="text-xs text-gray-400 mb-2">
-                    Fuente: carga histórica real de Pilot (ventas estado &quot;Registrado&quot;) — desde 2023
+                    Fuente: carga histórica real de Pilot (2023 en adelante) + webhook en vivo de
+                    Pilot en estado &quot;Registrado&quot; (desde el 20 de agosto {new Date().getFullYear()}).
                   </p>
-                  {anios.includes(new Date().getFullYear()) && (
-                    <p className="text-xs text-orange-500 mb-2">
-                      Ojo: {new Date().getFullYear()} tiene un hueco conocido entre marzo (corte del
-                      último export histórico) y agosto (activación del webhook en vivo) — la línea
-                      conecta visualmente ese tramo, pero no son datos reales de esos meses.
-                    </p>
-                  )}
                   <ResponsiveContainer width="100%" height={340}>
                     <LineChart data={interanualData}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -173,11 +167,10 @@ export default function AdminAnalisisComercial({ userEmail }) {
             {tab === "vendedores" && (
               <motion.div key="vendedores" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <div className="bg-blue-50 text-blue-700 text-sm rounded-lg p-4 mb-4">
-                  Nombre real del vendedor (carga histórica de Pilot) — acotado a solo{" "}
-                  <b>{data?.anioActual}</b> a propósito, para no mezclar en el ranking a alguien que ya
-                  no trabaja en la empresa con el equipo actual. Ojo: hoy esto solo cubre
-                  enero–marzo {data?.anioActual} (el corte del último export) — falta abril en
-                  adelante hasta que se acumulen más eventos del webhook en vivo.
+                  Nombre real del vendedor (carga histórica de Pilot + webhook en vivo en estado
+                  &quot;Registrado&quot;) — acotado a solo <b>{data?.anioActual}</b> a propósito, para
+                  no mezclar en el ranking a alguien que ya no trabaja en la empresa con el equipo
+                  actual.
                 </div>
                 <div className="bg-white rounded-xl shadow-sm p-5">
                   <h3 className="font-semibold text-gray-800 mb-3">Ranking por unidades ({data?.anioActual})</h3>

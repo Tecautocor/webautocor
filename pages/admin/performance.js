@@ -112,20 +112,20 @@ export default function AdminPerformance({ userEmail }) {
   const estadoAprobadoJefatura = data?.estadoAprobadoJefatura || [];
   const estadoPendientes = data?.estadoPendientes || [];
 
-  // PRUEBA (2026-09-10, a pedido del cliente): combinar dos fuentes para
-  // "ventas" - AllVehicle (fecha de facturacion) para meses anteriores a
-  // agosto 2026, y el embudo de webhooks de Pilot (Registrada + Aprobado
-  // Jefatura completadas = las dos etapas del proceso terminaron, vehiculo
-  // entregado) desde agosto en adelante, que es desde cuando esos webhooks
-  // estan conectados. Si no cuadra, revertir a `ventasAllVehicle` sola.
+  // Fuente combinada (2026-09-10, a pedido del cliente): AllVehicle (fecha de
+  // facturacion) para meses anteriores a agosto 2026, y el webhook de Pilot en
+  // vivo desde agosto en adelante, que es desde cuando esta conectado. Venta
+  // concretada = estado "Registrada" (VentaWebhookLog) por si solo, segun
+  // aclaracion del cliente (2026-09-17): "Aprobado Jefatura" es un paso
+  // posterior de revision de papeles/pagos, no el momento en que se concreta
+  // la venta, asi que no se exige tambien ese estado.
   const CUTOFF_MES_EMBUDO = 8;
   const ventas = useMemo(() => {
-    const registradaMap = new Map(estadoRegistrada.map((v) => [v.ventaId, v]));
-    const completadas = estadoAprobadoJefatura
-      .filter((v) => v.mes >= CUTOFF_MES_EMBUDO && registradaMap.has(v.ventaId))
-      .map((v) => ({ agencia: registradaMap.get(v.ventaId).agencia, mes: v.mes }));
-    return [...ventasAllVehicle.filter((v) => v.mes < CUTOFF_MES_EMBUDO), ...completadas];
-  }, [ventasAllVehicle, estadoRegistrada, estadoAprobadoJefatura]);
+    const registradas = estadoRegistrada
+      .filter((v) => v.mes >= CUTOFF_MES_EMBUDO)
+      .map((v) => ({ agencia: v.agencia, mes: v.mes }));
+    return [...ventasAllVehicle.filter((v) => v.mes < CUTOFF_MES_EMBUDO), ...registradas];
+  }, [ventasAllVehicle, estadoRegistrada]);
 
   const matchesExcept = (v, exceptDim) => {
     if (exceptDim !== "agencia" && filters.agencia && v.agencia !== filters.agencia) return false;
@@ -275,10 +275,9 @@ export default function AdminPerformance({ userEmail }) {
           )}
 
           <p className="text-xs text-gray-400 mb-2">
-            Prueba: “Ventas acumuladas YTD” combina dos fuentes — antes de agosto 2026 usa la fecha de
-            facturación de fábrica, y desde agosto usa las ventas que completaron las dos etapas del
-            proceso (Registrada + Aprobado Jefatura), que es desde cuando esos webhooks de Pilot están
-            conectados.
+            “Ventas acumuladas YTD” combina dos fuentes — antes de agosto 2026 usa la fecha de
+            facturación de fábrica, y desde agosto usa las ventas en estado “Registrada” (venta
+            concretada), que es desde cuando ese webhook de Pilot está conectado.
           </p>
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5 mb-6">
             <KpiCard icon={ChartBarIcon} label="Ventas acumuladas YTD" value={kpis.totalVentas} tone="gray" delay={0} />
