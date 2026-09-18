@@ -395,9 +395,9 @@ export default function AdminInventario({ userEmail }) {
               <h3 className="font-semibold text-gray-800 mb-1">Tipo de carrocería</h3>
               <p className="text-xs text-gray-400 mb-2">Clic en una barra para filtrar</p>
               <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={carroceriaData} layout="vertical" margin={{ left: 10 }}>
+                <BarChart data={carroceriaData} layout="vertical" margin={{ left: 10, right: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" hide />
+                  <XAxis type="number" hide domain={[0, (dataMax) => Math.ceil(dataMax * 1.15)]} />
                   <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 12 }} />
                   <Tooltip formatter={(v) => [`${v} unidades`]} />
                   <Bar
@@ -424,9 +424,9 @@ export default function AdminInventario({ userEmail }) {
               <h3 className="font-semibold text-gray-800 mb-1">Inventario por agencia</h3>
               <p className="text-xs text-gray-400 mb-2">Clic en una barra para filtrar</p>
               <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={agenciaData} layout="vertical" margin={{ left: 10 }}>
+                <BarChart data={agenciaData} layout="vertical" margin={{ left: 10, right: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" hide />
+                  <XAxis type="number" hide domain={[0, (dataMax) => Math.ceil(dataMax * 1.15)]} />
                   <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 11 }} />
                   <Tooltip formatter={(v) => [`${v} unidades`]} />
                   <Bar

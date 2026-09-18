@@ -399,9 +399,9 @@ export default function AdminPerformance({ userEmail }) {
               <h3 className="font-semibold text-gray-800 mb-1">Ranking por % de cumplimiento YTD</h3>
               <p className="text-xs text-gray-400 mb-2">Clic en una agencia para filtrar</p>
               <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={porAgenciaData} layout="vertical" margin={{ left: 10 }}>
+                <BarChart data={porAgenciaData} layout="vertical" margin={{ left: 10, right: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" unit="%" />
+                  <XAxis type="number" unit="%" domain={[0, (dataMax) => Math.ceil(dataMax * 1.15)]} />
                   <YAxis type="category" dataKey="agencia" width={130} tick={{ fontSize: 11 }} />
                   <Tooltip formatter={(v, n, p) => [`${v.toFixed(0)}% (${p.payload.ventasYtd}/${p.payload.metaYtd})`, "Cumplimiento"]} />
                   <Bar
