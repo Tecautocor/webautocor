@@ -45,7 +45,9 @@ async function handler(req, res) {
       anio
     ),
     db.$queryRawUnsafe(
-      `SELECT ventaId, MAX(TRIM(sucursal)) AS agencia, MAX(MONTH(fechaAlta)) AS mes
+      `SELECT ventaId, MAX(TRIM(sucursal)) AS agencia, MAX(MONTH(fechaAlta)) AS mes,
+              MAX(marca) AS marca, MAX(modelo) AS modelo, MAX(vendedorNombre) AS vendedor,
+              MAX(fechaAlta) AS fechaAlta
        FROM VentaWebhookLog
        WHERE TRIM(estado) = 'REGISTRADO' AND YEAR(fechaAlta) = ?
        GROUP BY ventaId`,
@@ -64,7 +66,8 @@ async function handler(req, res) {
       anio
     ),
     db.$queryRawUnsafe(
-      `SELECT ventaId, MAX(MONTH(createdAt)) AS mes
+      `SELECT ventaId, MAX(MONTH(createdAt)) AS mes, MAX(createdAt) AS fecha,
+              MAX(marca) AS marca, MAX(modelo) AS modelo, MAX(version) AS version, MAX(color) AS color
        FROM EcuaprimasMatchLog
        WHERE YEAR(createdAt) = ?
        GROUP BY ventaId`,
@@ -98,9 +101,25 @@ async function handler(req, res) {
     anio,
     ventas,
     metas: metas.map((m) => ({ agencia: normalizarAgencia(m.agencia), mes: m.mes, metaUnidades: m.metaUnidades })),
-    estadoRegistrada: registradaRows.map((r) => ({ ventaId: r.ventaId, agencia: normalizarAgencia(r.agencia), mes: Number(r.mes) })),
+    estadoRegistrada: registradaRows.map((r) => ({
+      ventaId: r.ventaId,
+      agencia: normalizarAgencia(r.agencia),
+      mes: Number(r.mes),
+      marca: r.marca,
+      modelo: r.modelo,
+      vendedor: r.vendedor,
+      fechaAlta: r.fechaAlta,
+    })),
     estadoReservada: reservadaRows.map((r) => ({ ventaId: r.ventaId, agencia: normalizarAgencia(r.agencia), mes: Number(r.mes) })),
-    estadoAprobadoJefatura: aprobadoJefaturaRows.map((r) => ({ ventaId: r.ventaId, mes: Number(r.mes) })),
+    estadoAprobadoJefatura: aprobadoJefaturaRows.map((r) => ({
+      ventaId: r.ventaId,
+      mes: Number(r.mes),
+      fecha: r.fecha,
+      marca: r.marca,
+      modelo: r.modelo,
+      version: r.version,
+      color: r.color,
+    })),
     estadoPendientes: pendientesRows.map((r) => ({
       ventaId: r.ventaId,
       marca: r.marca,

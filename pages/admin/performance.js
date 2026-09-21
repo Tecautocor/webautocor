@@ -90,6 +90,8 @@ export default function AdminPerformance({ userEmail }) {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ agencia: null, mes: null });
   const [mostrarPendientes, setMostrarPendientes] = useState(false);
+  const [mostrarRegistrada, setMostrarRegistrada] = useState(false);
+  const [mostrarAprobados, setMostrarAprobados] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -129,20 +131,22 @@ export default function AdminPerformance({ userEmail }) {
   // EcuaprimasMatchLog (Aprobado Jefatura) no trae agencia en el payload de Pilot,
   // asi que ese conteo y el total (union de ambos estados) solo se pueden filtrar
   // por mes - el filtro de agencia solo aplica a Registrada y Pendientes.
-  const estadoRegistradaCount = useMemo(
-    () => estadoRegistrada.filter((v) => matchesExcept(v, null)).length,
+  const estadoRegistradaFiltrada = useMemo(
+    () => estadoRegistrada.filter((v) => matchesExcept(v, null)),
     [estadoRegistrada, filters]
   );
+  const estadoRegistradaCount = estadoRegistradaFiltrada.length;
   // Reservada (RESERVA-APRO JEFATURA) - vacio hasta que se conecte la
   // plantilla en Pilot, ver nota en la tarjeta de "Ventas del mes vs Meta".
   const estadoReservadaCount = useMemo(
     () => estadoReservada.filter((v) => matchesExcept(v, null)).length,
     [estadoReservada, filters]
   );
-  const estadoAprobadoJefaturaCount = useMemo(
-    () => estadoAprobadoJefatura.filter(matchesMes).length,
+  const estadoAprobadoJefaturaFiltrada = useMemo(
+    () => estadoAprobadoJefatura.filter(matchesMes),
     [estadoAprobadoJefatura, filters.mes]
   );
+  const estadoAprobadoJefaturaCount = estadoAprobadoJefaturaFiltrada.length;
   const estadoPendientesFiltrado = useMemo(
     () => estadoPendientes.filter((v) => matchesExcept(v, null)),
     [estadoPendientes, filters]
@@ -430,18 +434,34 @@ export default function AdminPerformance({ userEmail }) {
                 </div>
                 <div className="text-xs text-gray-500 mt-0.5">Total en el embudo</div>
               </div>
-              <div className="rounded-lg bg-gray-50 p-4">
+              <button
+                type="button"
+                onClick={() => setMostrarRegistrada((v) => !v)}
+                className={`rounded-lg p-4 text-left transition ${
+                  mostrarRegistrada ? "bg-main/10 ring-1 ring-main/30" : "bg-gray-50 hover:bg-gray-100"
+                }`}
+              >
                 <div className="text-2xl font-bold text-gray-800 tabular-nums">
                   <AnimatedNumber value={estadoRegistradaCount} />
                 </div>
-                <div className="text-xs text-gray-500 mt-0.5">Registrada</div>
-              </div>
-              <div className="rounded-lg bg-gray-50 p-4">
+                <div className="text-xs text-gray-500 mt-0.5">
+                  Registrada {estadoRegistradaCount > 0 && (mostrarRegistrada ? "▲" : "▼ ver detalle")}
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMostrarAprobados((v) => !v)}
+                className={`rounded-lg p-4 text-left transition ${
+                  mostrarAprobados ? "bg-main/10 ring-1 ring-main/30" : "bg-gray-50 hover:bg-gray-100"
+                }`}
+              >
                 <div className="text-2xl font-bold text-gray-800 tabular-nums">
                   <AnimatedNumber value={estadoAprobadoJefaturaCount} />
                 </div>
-                <div className="text-xs text-gray-500 mt-0.5">Aprobado Jefatura</div>
-              </div>
+                <div className="text-xs text-gray-500 mt-0.5">
+                  Aprobado Jefatura {estadoAprobadoJefaturaCount > 0 && (mostrarAprobados ? "▲" : "▼ ver detalle")}
+                </div>
+              </button>
               <button
                 type="button"
                 onClick={() => setMostrarPendientes((v) => !v)}
@@ -463,6 +483,76 @@ export default function AdminPerformance({ userEmail }) {
                 “Aprobado Jefatura” no se filtran por agencia, solo por mes. “Registrada” y
                 “Pendientes” sí.
               </p>
+            )}
+
+            {mostrarRegistrada && estadoRegistradaFiltrada.length > 0 && (
+              <div className="mt-5 overflow-x-auto">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                  Ventas en Registrada ({estadoRegistradaFiltrada.length})
+                </h4>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-400 text-xs uppercase border-b">
+                      <th className="py-2 pr-2">Venta ID</th>
+                      <th className="py-2 pr-2">Vehículo</th>
+                      <th className="py-2 pr-2">Vendedor</th>
+                      <th className="py-2 pr-2">Agencia</th>
+                      <th className="py-2 pr-2 text-right">Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...estadoRegistradaFiltrada]
+                      .sort((a, b) => new Date(b.fechaAlta) - new Date(a.fechaAlta))
+                      .map((v) => (
+                        <tr key={v.ventaId} className="border-b last:border-0">
+                          <td className="py-2 pr-2 text-gray-500">{v.ventaId}</td>
+                          <td className="py-2 pr-2 font-medium text-gray-800">
+                            {v.marca} {v.modelo}
+                          </td>
+                          <td className="py-2 pr-2 text-gray-500">{v.vendedor || "—"}</td>
+                          <td className="py-2 pr-2 text-gray-500">{v.agencia || "—"}</td>
+                          <td className="py-2 pr-2 text-right tabular-nums text-gray-500">
+                            {v.fechaAlta ? new Date(v.fechaAlta).toLocaleDateString("es-EC") : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {mostrarAprobados && estadoAprobadoJefaturaFiltrada.length > 0 && (
+              <div className="mt-5 overflow-x-auto">
+                <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                  Ventas en Aprobado Jefatura ({estadoAprobadoJefaturaFiltrada.length})
+                </h4>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-400 text-xs uppercase border-b">
+                      <th className="py-2 pr-2">Venta ID</th>
+                      <th className="py-2 pr-2">Vehículo</th>
+                      <th className="py-2 pr-2">Color</th>
+                      <th className="py-2 pr-2 text-right">Fecha aprobación</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...estadoAprobadoJefaturaFiltrada]
+                      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+                      .map((v) => (
+                        <tr key={v.ventaId} className="border-b last:border-0">
+                          <td className="py-2 pr-2 text-gray-500">{v.ventaId}</td>
+                          <td className="py-2 pr-2 font-medium text-gray-800">
+                            {v.marca} {v.modelo} {v.version || ""}
+                          </td>
+                          <td className="py-2 pr-2 text-gray-500">{v.color || "—"}</td>
+                          <td className="py-2 pr-2 text-right tabular-nums text-gray-500">
+                            {v.fecha ? new Date(v.fecha).toLocaleDateString("es-EC") : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
             )}
 
             {mostrarPendientes && estadoPendientesFiltrado.length > 0 && (
