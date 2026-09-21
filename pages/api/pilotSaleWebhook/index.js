@@ -199,6 +199,9 @@ async function handler(req, res) {
         errorCotizacion: cotizacionResultado && !cotizacionResultado.ok ? cotizacionResultado.error : null,
         observacionesPilotOk: !!observacionesResultado?.ok,
         errorObservaciones: observacionesResultado && !observacionesResultado.ok ? observacionesResultado.error : null,
+        // Sin "cliente" a proposito - mismo criterio de privacidad que el
+        // resto del modelo (no guardar cedula/telefono/direccion).
+        rawPayload: { venta, vehiculo, vendedor },
       },
     });
   } catch (err) {

@@ -101,7 +101,10 @@ model EcuaprimasCatalogo {
 // Un registro por cada venta "APROBADA JEFATURA" que pasa por el matching
 // de catálogo Ecuaprimas (pilotSaleWebhook) - alimenta el tablero de control
 // en /admin/ecuaprimas. No guarda datos del cliente (cédula, teléfono,
-// dirección), solo lo del vehículo y el resultado del match.
+// dirección), solo lo del vehículo y el resultado del match. rawPayload
+// tampoco incluye el objeto "cliente" del webhook, por la misma razón -
+// solo venta/vehiculo/vendedor, como respaldo para futuro análisis (antes
+// se descartaba todo el payload salvo los campos de match/cotización).
 model EcuaprimasMatchLog {
   id                   Int      @id @default(autoincrement())
   ventaId              String
@@ -124,6 +127,7 @@ model EcuaprimasMatchLog {
   pdfUrl               String?
   observacionesPilotOk Boolean  @default(false)
   errorObservaciones   String?
+  rawPayload           Json?
 }
 
 // Log crudo del webhook de Ventas de Pilot (entidad "Ventas"). Guarda el

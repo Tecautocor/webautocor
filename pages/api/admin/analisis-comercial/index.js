@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]";
 import db from "../../../../lib/db";
+import { normalizarAgencia } from "../../../../lib/agenciaAliases";
 
 async function handler(req, res) {
   const session = await getServerSession(req, res, authOptions);
@@ -83,10 +84,11 @@ async function handler(req, res) {
   ]);
   const porVendedorMap = new Map();
   for (const r of [...porVendedorHistorico, ...porVendedorEnVivo]) {
-    const key = `${r.vendedor}|${r.agencia}`;
+    const agencia = normalizarAgencia(r.agencia);
+    const key = `${r.vendedor}|${agencia}`;
     porVendedorMap.set(key, {
       vendedor: r.vendedor,
-      agencia: r.agencia,
+      agencia,
       n: (porVendedorMap.get(key)?.n || 0) + Number(r.n),
     });
   }

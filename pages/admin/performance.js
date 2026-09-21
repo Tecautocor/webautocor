@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  BarChart,
+  ComposedChart,
   Bar,
-  LineChart,
   Line,
   XAxis,
   YAxis,
@@ -13,7 +12,6 @@ import {
   Legend,
   ResponsiveContainer,
   Cell,
-  LabelList,
 } from "recharts";
 import { requireAdminSession } from "../../lib/adminAuth";
 import AdminLayout from "../../components/admin/AdminLayout";
@@ -24,6 +22,7 @@ import {
   FlagIcon,
   CalendarDaysIcon,
   XMarkIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
 
 export async function getServerSideProps(context) {
@@ -90,6 +89,7 @@ export default function AdminPerformance({ userEmail }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ agencia: null, mes: null });
+  const [mostrarPendientes, setMostrarPendientes] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -106,26 +106,16 @@ export default function AdminPerformance({ userEmail }) {
   };
   const clearAll = () => setFilters({ agencia: null, mes: null });
 
-  const ventasAllVehicle = data?.ventas || [];
+  // "Venta concretada" = estado "Registrada" en Pilot (aclaracion del cliente,
+  // 2026-09-17), ya unificado en el backend para todo el anio: historico
+  // importado de Pilot antes del webhook en vivo (conectado 20-ago-2026) +
+  // webhook en vivo desde entonces, sin duplicados.
+  const ventas = data?.ventas || [];
   const metas = data?.metas || [];
   const estadoRegistrada = data?.estadoRegistrada || [];
+  const estadoReservada = data?.estadoReservada || [];
   const estadoAprobadoJefatura = data?.estadoAprobadoJefatura || [];
   const estadoPendientes = data?.estadoPendientes || [];
-
-  // Fuente combinada (2026-09-10, a pedido del cliente): AllVehicle (fecha de
-  // facturacion) para meses anteriores a agosto 2026, y el webhook de Pilot en
-  // vivo desde agosto en adelante, que es desde cuando esta conectado. Venta
-  // concretada = estado "Registrada" (VentaWebhookLog) por si solo, segun
-  // aclaracion del cliente (2026-09-17): "Aprobado Jefatura" es un paso
-  // posterior de revision de papeles/pagos, no el momento en que se concreta
-  // la venta, asi que no se exige tambien ese estado.
-  const CUTOFF_MES_EMBUDO = 8;
-  const ventas = useMemo(() => {
-    const registradas = estadoRegistrada
-      .filter((v) => v.mes >= CUTOFF_MES_EMBUDO)
-      .map((v) => ({ agencia: v.agencia, mes: v.mes }));
-    return [...ventasAllVehicle.filter((v) => v.mes < CUTOFF_MES_EMBUDO), ...registradas];
-  }, [ventasAllVehicle, estadoRegistrada]);
 
   const matchesExcept = (v, exceptDim) => {
     if (exceptDim !== "agencia" && filters.agencia && v.agencia !== filters.agencia) return false;
@@ -142,6 +132,12 @@ export default function AdminPerformance({ userEmail }) {
   const estadoRegistradaCount = useMemo(
     () => estadoRegistrada.filter((v) => matchesExcept(v, null)).length,
     [estadoRegistrada, filters]
+  );
+  // Reservada (RESERVA-APRO JEFATURA) - vacio hasta que se conecte la
+  // plantilla en Pilot, ver nota en la tarjeta de "Ventas del mes vs Meta".
+  const estadoReservadaCount = useMemo(
+    () => estadoReservada.filter((v) => matchesExcept(v, null)).length,
+    [estadoReservada, filters]
   );
   const estadoAprobadoJefaturaCount = useMemo(
     () => estadoAprobadoJefatura.filter(matchesMes).length,
@@ -214,25 +210,43 @@ export default function AdminPerformance({ userEmail }) {
       .sort((a, b) => b.pct - a.pct);
   }, [ventas, metas, filters, mesActual]);
 
+  // "Gerencias" no es una sucursal real - se excluye solo del ranking (a
+  // pedido del cliente, 2026-09-21), pero se deja en "Resumen YTD por
+  // agencia" porque no se pidio quitarla de ahi.
+  const porAgenciaRanking = useMemo(
+    () => porAgenciaData.filter((row) => row.agencia !== "Gerencias"),
+    [porAgenciaData]
+  );
+
+  // Mes a mes (no acumulado) - para poder ver de un vistazo que mes especifico
+  // se quedo corto, en vez de un acumulado que disimula meses malos si los
+  // anteriores fueron buenos. Los meses futuros (sin dato real todavia) se
+  // rellenan con una proyeccion = promedio de los ultimos 3 meses con dato
+  // real, marcada visualmente distinta (barra punteada/translucida) para no
+  // confundirla con una venta ya ocurrida.
   const evolucionData = useMemo(() => {
     const base = ventas.filter((v) => matchesExcept(v, "mes"));
-    let acumVentas = 0;
-    let acumMeta = 0;
-    return MESES_LABEL.map((label, i) => {
+    const porMes = MESES_LABEL.map((label, i) => {
       const mes = i + 1;
       const ventasMes = base.filter((v) => v.mes === mes).length;
       const metaMes = metas
         .filter((m) => m.mes === mes && (!filters.agencia || m.agencia === filters.agencia))
         .reduce((s, m) => s + m.metaUnidades, 0);
-      acumVentas += mes <= mesActual ? ventasMes : 0;
-      acumMeta += metaMes;
-      return {
-        mes: label,
-        mesNum: mes,
-        ventasAcumuladas: mes <= mesActual ? acumVentas : null,
-        presupuestoAcumulado: acumMeta,
-      };
+      return { mes, label, ventasMes: mes <= mesActual ? ventasMes : null, metaMes };
     });
+
+    const ultimosReales = porMes.filter((d) => d.ventasMes !== null).slice(-3);
+    const promedio = ultimosReales.length
+      ? Math.round(ultimosReales.reduce((s, d) => s + d.ventasMes, 0) / ultimosReales.length)
+      : 0;
+
+    return porMes.map((d) => ({
+      mes: d.label,
+      mesNum: d.mes,
+      metaMes: d.metaMes,
+      esProyeccion: d.ventasMes === null,
+      valor: d.ventasMes !== null ? d.ventasMes : promedio,
+    }));
   }, [ventas, metas, filters, mesActual]);
 
   const activeChips = [
@@ -275,13 +289,13 @@ export default function AdminPerformance({ userEmail }) {
           )}
 
           <p className="text-xs text-gray-400 mb-2">
-            “Ventas acumuladas YTD” combina dos fuentes — antes de agosto 2026 usa la fecha de
-            facturación de fábrica, y desde agosto usa las ventas en estado “Registrada” (venta
-            concretada), que es desde cuando ese webhook de Pilot está conectado.
+            “Ventas acumuladas YTD” cuenta ventas en estado “Registrada” (venta concretada),
+            combinando el histórico importado de Pilot con el webhook en vivo conectado desde
+            agosto 2026.
           </p>
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-5 mb-6">
             <KpiCard icon={ChartBarIcon} label="Ventas acumuladas YTD" value={kpis.totalVentas} tone="gray" delay={0} />
-            <KpiCard icon={FlagIcon} label="Presupuesto acumulado YTD" value={kpis.metaTotalPeriodo} tone="blue" delay={0.05} />
+            <KpiCard icon={FlagIcon} label="Meta acumulada YTD" value={kpis.metaTotalPeriodo} tone="blue" delay={0.05} />
             <KpiCard
               icon={ChartBarIcon}
               label="% Cumplimiento YTD"
@@ -299,6 +313,106 @@ export default function AdminPerformance({ userEmail }) {
               tone={kpis.pctMesActual >= 95 ? "green" : kpis.pctMesActual >= 80 ? "orange" : "red"}
               delay={0.2}
             />
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-2 mb-6">
+            <motion.div layout className="bg-white rounded-xl shadow-sm p-5">
+              <h3 className="font-semibold text-gray-800 mb-1">Ranking por % de cumplimiento YTD</h3>
+              <p className="text-xs text-gray-400 mb-3">Clic en una agencia para filtrar</p>
+              {porAgenciaRanking.length > 0 ? (
+                <div className="space-y-2">
+                  {porAgenciaRanking.map((row, idx) => {
+                    const barPct = Math.min(row.pct, 100);
+                    const color = cumplimientoColor(row.pct);
+                    return (
+                      <button
+                        key={row.agencia}
+                        onClick={() => toggleFilter("agencia", row.agencia)}
+                        className={`w-full text-left flex items-center gap-3 border rounded-lg px-3 py-2 hover:bg-gray-50 transition ${
+                          filters.agencia && filters.agencia !== row.agencia ? "opacity-40" : ""
+                        }`}
+                      >
+                        <span className="font-bold text-gray-800 text-sm w-4 shrink-0">{idx + 1}</span>
+                        <span className="font-bold text-gray-800 text-sm uppercase truncate flex-1">
+                          {row.agencia}
+                        </span>
+                        <span className="text-xs text-gray-500 whitespace-nowrap shrink-0">
+                          {row.ventasYtd}/{row.metaYtd}
+                        </span>
+                        <div className="w-20 h-2 bg-gray-100 rounded-full overflow-hidden shrink-0 hidden sm:block">
+                          <div className="h-full rounded-full" style={{ width: `${barPct}%`, backgroundColor: color }} />
+                        </div>
+                        <span className="text-sm font-semibold w-12 text-right shrink-0" style={{ color }}>
+                          {row.pct.toFixed(0)}%
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm py-6 text-center">Sin datos para los filtros seleccionados.</p>
+              )}
+            </motion.div>
+
+            <motion.div layout className="bg-white rounded-xl shadow-sm p-5">
+              <h3 className="font-semibold text-gray-800 mb-1">Ventas del mes vs Meta del mes</h3>
+              <p className="text-xs text-gray-400 mb-2">
+                Verde = mes cumplido, rojo = mes por debajo de meta. Barra punteada = proyección
+                (promedio de los últimos 3 meses reales). Clic en un mes para filtrar.
+              </p>
+              <ResponsiveContainer width="100%" height={280}>
+                <ComposedChart data={evolucionData} onClick={(e) => e?.activeLabel && toggleFilter("mes", evolucionData.find((d) => d.mes === e.activeLabel)?.mesNum)}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip
+                    formatter={(v, n, p) =>
+                      p.dataKey === "valor"
+                        ? [v, p.payload.esProyeccion ? "Proyección (prom. 3 meses)" : "Ventas del mes"]
+                        : [v, n]
+                    }
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="valor" name="Ventas del mes" radius={[4, 4, 0, 0]} cursor="pointer">
+                    {evolucionData.map((d) => {
+                      const cumplida = d.metaMes ? d.valor >= d.metaMes : null;
+                      const style = d.esProyeccion
+                        ? { fill: "#e2e8f0", fillOpacity: 0.6, stroke: "#94a3b8", strokeDasharray: "4 2", strokeWidth: 1.5 }
+                        : { fill: cumplida === null ? "#94a3b8" : cumplida ? "#16a34a" : "#e43d30" };
+                      return (
+                        <Cell key={d.mes} {...style} opacity={filters.mes && filters.mes !== d.mesNum ? 0.3 : 1} />
+                      );
+                    })}
+                  </Bar>
+                  <Line type="monotone" dataKey="metaMes" name="Meta del mes" stroke="#1e293b" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3 }} />
+                </ComposedChart>
+              </ResponsiveContainer>
+
+              {estadoReservada.length > 0 ? (
+                <div className="mt-3 rounded-lg bg-blue-50 p-4 flex items-center gap-3">
+                  <ClockIcon className="h-5 w-5 text-blue-500 shrink-0" />
+                  <div>
+                    <div className="text-2xl font-bold text-blue-700 tabular-nums">
+                      <AnimatedNumber value={estadoReservadaCount} />
+                    </div>
+                    <p className="text-xs text-blue-600">Reservas (RESERVA-APRO JEFATURA) en el período</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 flex items-start gap-3">
+                  <ClockIcon className="h-5 w-5 text-gray-400 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-gray-600">Reservas — pendiente de conectar</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      El estado “Reservada” (RESERVA-APRO JEFATURA) de Pilot todavía no llega por ningún
+                      webhook en vivo, así que no hay un conteo automático que mostrar aquí. En cuanto se
+                      conecte esa plantilla en Pilot (Admin &gt; Plantillas de Webhooks), esta tarjeta va a
+                      mostrar el número real automáticamente, sin tocar código.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </motion.div>
           </div>
 
           <div className="bg-white rounded-xl shadow-sm p-5 mb-6">
@@ -328,12 +442,20 @@ export default function AdminPerformance({ userEmail }) {
                 </div>
                 <div className="text-xs text-gray-500 mt-0.5">Aprobado Jefatura</div>
               </div>
-              <div className="rounded-lg bg-orange-50 p-4">
+              <button
+                type="button"
+                onClick={() => setMostrarPendientes((v) => !v)}
+                className={`rounded-lg p-4 text-left transition ${
+                  mostrarPendientes ? "bg-orange-100 ring-1 ring-orange-300" : "bg-orange-50 hover:bg-orange-100"
+                }`}
+              >
                 <div className="text-2xl font-bold text-orange-700 tabular-nums">
                   <AnimatedNumber value={estadoPendientesFiltrado.length} />
                 </div>
-                <div className="text-xs text-orange-600 mt-0.5">Pendientes de aprobación</div>
-              </div>
+                <div className="text-xs text-orange-600 mt-0.5">
+                  Pendientes de aprobación {estadoPendientesFiltrado.length > 0 && (mostrarPendientes ? "▲" : "▼ ver detalle")}
+                </div>
+              </button>
             </div>
             {filters.agencia && (
               <p className="text-[11px] text-gray-400 mt-3">
@@ -343,10 +465,10 @@ export default function AdminPerformance({ userEmail }) {
               </p>
             )}
 
-            {estadoPendientesFiltrado.length > 0 && (
+            {mostrarPendientes && estadoPendientesFiltrado.length > 0 && (
               <div className="mt-5 overflow-x-auto">
                 <h4 className="text-sm font-semibold text-gray-700 mb-2">
-                  Top 10 ventas registradas con más días esperando pasar a Aprobado Jefatura
+                  Pendientes de aprobación ({estadoPendientesFiltrado.length}) — ordenadas por más días esperando
                 </h4>
                 <table className="w-full text-sm">
                   <thead>
@@ -362,7 +484,6 @@ export default function AdminPerformance({ userEmail }) {
                   <tbody>
                     {[...estadoPendientesFiltrado]
                       .sort((a, b) => new Date(a.fechaAlta) - new Date(b.fechaAlta))
-                      .slice(0, 10)
                       .map((p) => {
                         const dias = Math.floor((Date.now() - new Date(p.fechaAlta).getTime()) / 86400000);
                         return (
@@ -394,53 +515,6 @@ export default function AdminPerformance({ userEmail }) {
             )}
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2 mb-6">
-            <motion.div layout className="bg-white rounded-xl shadow-sm p-5">
-              <h3 className="font-semibold text-gray-800 mb-1">Ranking por % de cumplimiento YTD</h3>
-              <p className="text-xs text-gray-400 mb-2">Clic en una agencia para filtrar</p>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={porAgenciaData} layout="vertical" margin={{ left: 10, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" unit="%" domain={[0, (dataMax) => Math.ceil(dataMax * 1.15)]} />
-                  <YAxis type="category" dataKey="agencia" width={130} tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v, n, p) => [`${v.toFixed(0)}% (${p.payload.ventasYtd}/${p.payload.metaYtd})`, "Cumplimiento"]} />
-                  <Bar
-                    dataKey="pct"
-                    radius={[0, 6, 6, 0]}
-                    animationDuration={600}
-                    onClick={(d) => toggleFilter("agencia", d.agencia)}
-                    cursor="pointer"
-                  >
-                    {porAgenciaData.map((entry) => (
-                      <Cell
-                        key={entry.agencia}
-                        fill={cumplimientoColor(entry.pct)}
-                        opacity={filters.agencia && filters.agencia !== entry.agencia ? 0.3 : 1}
-                      />
-                    ))}
-                    <LabelList dataKey="pct" position="right" formatter={(v) => `${v.toFixed(0)}%`} fontSize={12} fontWeight={700} />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </motion.div>
-
-            <motion.div layout className="bg-white rounded-xl shadow-sm p-5">
-              <h3 className="font-semibold text-gray-800 mb-1">Evolución acumulada: Ventas vs Presupuesto</h3>
-              <p className="text-xs text-gray-400 mb-2">Clic en un mes para filtrar</p>
-              <ResponsiveContainer width="100%" height={280}>
-                <LineChart data={evolucionData} onClick={(e) => e?.activeLabel && toggleFilter("mes", evolucionData.find((d) => d.mes === e.activeLabel)?.mesNum)}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Line type="monotone" dataKey="ventasAcumuladas" name="Ventas acumuladas" stroke="#e43d30" strokeWidth={3} dot={{ r: 3 }} connectNulls />
-                  <Line type="monotone" dataKey="presupuestoAcumulado" name="Presupuesto acumulado" stroke="#94a3b8" strokeWidth={2} strokeDasharray="5 5" dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </motion.div>
-          </div>
-
           <div className="bg-white rounded-xl shadow-sm p-5 overflow-x-auto">
             <h3 className="font-semibold text-gray-800 mb-3">Resumen YTD por agencia</h3>
             <table className="w-full text-sm">
@@ -448,7 +522,7 @@ export default function AdminPerformance({ userEmail }) {
                 <tr className="text-left text-gray-400 text-xs uppercase border-b">
                   <th className="py-2 pr-2">Agencia</th>
                   <th className="py-2 pr-2 text-right">Ventas YTD</th>
-                  <th className="py-2 pr-2 text-right">Presupuesto YTD</th>
+                  <th className="py-2 pr-2 text-right">Meta YTD</th>
                   <th className="py-2 pr-2 text-right">% Cumplimiento</th>
                   <th className="py-2 pr-2 text-right">Gap</th>
                 </tr>

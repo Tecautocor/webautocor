@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../auth/[...nextauth]";
 import db from "../../../../lib/db";
+import { normalizarAgencia } from "../../../../lib/agenciaAliases";
 
 const MESES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
@@ -48,7 +49,7 @@ async function handler(req, res) {
     const metas = await db.metaVentas.findMany({ where: { anio } });
     const ventasMap = await ventasRealesPorAgenciaMes(anio);
 
-    const metaMap = new Map(metas.map((m) => [`${m.mes}|${m.agencia}`, m]));
+    const metaMap = new Map(metas.map((m) => [`${m.mes}|${normalizarAgencia(m.agencia)}`, m]));
     const grid = agencias.map((agencia) => ({
       agencia,
       meses: MESES.map((mes) => ({
@@ -70,14 +71,15 @@ async function handler(req, res) {
     if (!Number.isFinite(valor) || valor < 0) {
       return res.status(400).json({ message: "Meta invalida" });
     }
+    const agenciaNormalizada = normalizarAgencia(agencia);
 
     const updated = await db.metaVentas.upsert({
-      where: { anio_mes_agencia: { anio: parseInt(anio, 10), mes: parseInt(mes, 10), agencia } },
+      where: { anio_mes_agencia: { anio: parseInt(anio, 10), mes: parseInt(mes, 10), agencia: agenciaNormalizada } },
       update: { metaUnidades: valor, updatedBy: session.user?.email || null },
       create: {
         anio: parseInt(anio, 10),
         mes: parseInt(mes, 10),
-        agencia,
+        agencia: agenciaNormalizada,
         metaUnidades: valor,
         updatedBy: session.user?.email || null,
       },
