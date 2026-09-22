@@ -27,13 +27,31 @@ async function handler(req, res) {
     select: { formulario: true, createdAt: true },
   });
 
-  const negociosCerradosRows = await db.$queryRawUnsafe(
-    `SELECT factory_invoicing_dt AS fecha FROM AllVehicle
-     WHERE availability_status_code = '3'
-       AND factory_invoicing_dt IS NOT NULL
-       AND YEAR(factory_invoicing_dt) = ?`,
-    anio
-  );
+  // "Negocio cerrado" = venta en estado "Registrada" en Pilot (mismo criterio
+  // real confirmado por el cliente el 2026-09-17 y ya usado en Performance y
+  // Analisis Comercial) - reemplaza el proxy viejo (AllVehicle + fecha de
+  // facturacion de fabrica), que no reflejaba el momento real en que se
+  // concreta la venta. Combina el historico importado de Pilot con el
+  // webhook en vivo, excluyendo cualquier ventaId que el webhook ya cubra
+  // para no contar la misma venta dos veces.
+  const [negociosHistoricoRows, negociosEnVivoRows] = await Promise.all([
+    db.$queryRawUnsafe(
+      `SELECT MONTH(h.fechaAlta) AS mes
+       FROM VentaHistoricoImport h
+       LEFT JOIN (SELECT DISTINCT ventaId FROM VentaWebhookLog WHERE TRIM(estado) = 'REGISTRADO') w
+         ON w.ventaId = h.ventaId
+       WHERE YEAR(h.fechaAlta) = ? AND w.ventaId IS NULL`,
+      anio
+    ),
+    db.$queryRawUnsafe(
+      `SELECT ventaId, MONTH(MIN(fechaAlta)) AS mes
+       FROM VentaWebhookLog
+       WHERE TRIM(estado) = 'REGISTRADO' AND YEAR(fechaAlta) = ?
+       GROUP BY ventaId`,
+      anio
+    ),
+  ]);
+  const negociosCerradosRows = [...negociosHistoricoRows, ...negociosEnVivoRows];
 
   return res.status(200).json({
     anio,
@@ -46,7 +64,7 @@ async function handler(req, res) {
       mes: l.createdAt.getUTCMonth() + 1,
     })),
     negociosCerrados: negociosCerradosRows.map((r) => ({
-      mes: new Date(r.fecha).getUTCMonth() + 1,
+      mes: Number(r.mes),
     })),
   });
 }
