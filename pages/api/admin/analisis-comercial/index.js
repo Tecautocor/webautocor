@@ -109,7 +109,7 @@ async function handler(req, res) {
      WHERE w.ventaId IS NULL`
   );
 
-  const enVivo = await db.ventaWebhookLog.findMany({
+  const enVivoRaw = await db.ventaWebhookLog.findMany({
     // El dato crudo trae un espacio al final ("Registrado "). La collation de
     // esta columna (utf8mb4_0900_ai_ci) no lo ignora en comparaciones exactas,
     // asi que un `estado: "Registrado"` literal nunca matchea nada - se usa
@@ -133,6 +133,17 @@ async function handler(req, res) {
     },
     orderBy: { receivedAt: "desc" },
     take: 500,
+  });
+  // Pilot puede reenviar el mismo webhook mas de una vez para la misma venta
+  // (mismo patron ya manejado con GROUP BY ventaId en Performance/Embudo) -
+  // aqui se dedupea en JS quedandose con la entrega mas reciente por ventaId
+  // (ya viene ordenado por receivedAt desc, asi que la primera ocurrencia es
+  // la mas nueva).
+  const ventaIdVistos = new Set();
+  const enVivo = enVivoRaw.filter((r) => {
+    if (ventaIdVistos.has(r.ventaId)) return false;
+    ventaIdVistos.add(r.ventaId);
+    return true;
   });
 
   const h = historicoAgg[0];
