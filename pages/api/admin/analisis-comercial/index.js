@@ -110,7 +110,12 @@ async function handler(req, res) {
   );
 
   const enVivo = await db.ventaWebhookLog.findMany({
-    where: { estado: "Registrado" },
+    // El dato crudo trae un espacio al final ("Registrado "). La collation de
+    // esta columna (utf8mb4_0900_ai_ci) no lo ignora en comparaciones exactas,
+    // asi que un `estado: "Registrado"` literal nunca matchea nada - se usa
+    // startsWith para que sea robusto a eso, igual que el resto del archivo
+    // usa TRIM() en las consultas SQL crudas.
+    where: { estado: { startsWith: "Registrado" } },
     select: {
       ventaId: true,
       precioLista: true,
