@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LineChart,
   Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -78,24 +80,6 @@ export default function AdminAnalisisComercial({ userEmail }) {
     const anterior = sum(anioAnterior);
     return { anioActual, anioAnterior, actual, anterior, pct: anterior ? ((actual - anterior) / anterior) * 100 : 0 };
   }, [data, anios]);
-
-  const porVendedorList = data?.porVendedor || [];
-  const top3Vendedores = useMemo(() => porVendedorList.slice(0, 3), [porVendedorList]);
-  const porSucursal = useMemo(() => {
-    const map = new Map();
-    for (const v of porVendedorList) {
-      const key = v.agencia || "Sin sucursal";
-      if (!map.has(key)) map.set(key, []);
-      map.get(key).push(v);
-    }
-    return [...map.entries()]
-      .map(([agencia, vendedores]) => ({
-        agencia,
-        vendedores: [...vendedores].sort((a, b) => b.n - a.n).slice(0, 6),
-        total: vendedores.reduce((s, v) => s + v.n, 0),
-      }))
-      .sort((a, b) => b.total - a.total);
-  }, [porVendedorList]);
 
   const rentabilidadEnVivo = data?.rentabilidadEnVivo || [];
   const rentHistorico = data?.rentabilidadHistorico || null;
@@ -182,61 +166,23 @@ export default function AdminAnalisisComercial({ userEmail }) {
 
             {tab === "vendedores" && (
               <motion.div key="vendedores" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                {top3Vendedores.length > 0 && (
-                  <div className="grid gap-4 grid-cols-1 sm:grid-cols-3 mb-6">
-                    {top3Vendedores.map((v, i) => {
-                      const medal = [
-                        { bg: "bg-yellow-50", ring: "ring-yellow-300", text: "text-yellow-700", emoji: "🥇" },
-                        { bg: "bg-gray-50", ring: "ring-gray-300", text: "text-gray-600", emoji: "🥈" },
-                        { bg: "bg-orange-50", ring: "ring-orange-300", text: "text-orange-700", emoji: "🥉" },
-                      ][i];
-                      return (
-                        <div
-                          key={`${v.vendedor}|${v.agencia}`}
-                          className={`rounded-xl shadow-sm p-5 ring-2 ${medal.bg} ${medal.ring}`}
-                        >
-                          <div className="text-3xl mb-2">{medal.emoji}</div>
-                          <div className="font-bold text-gray-800 uppercase truncate">{v.vendedor}</div>
-                          <div className="text-xs text-gray-500 mb-2">{v.agencia}</div>
-                          <div className={`text-2xl font-bold ${medal.text}`}>
-                            {v.n} <span className="text-sm font-normal text-gray-500">unidades</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                <h3 className="text-sm font-semibold text-gray-500 mb-3">
-                  Ranking por sucursal ({data?.anioActual})
-                </h3>
-                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                  {porSucursal.map((s) => (
-                    <div key={s.agencia} className="bg-white rounded-xl shadow-sm p-5">
-                      <h4 className="font-semibold text-gray-800 mb-3 uppercase text-sm">{s.agencia}</h4>
-                      <div className="space-y-2">
-                        {s.vendedores.map((v, idx) => {
-                          const maxN = s.vendedores[0].n || 1;
-                          const relPct = Math.round((v.n / maxN) * 100);
-                          return (
-                            <div key={v.vendedor} className="flex items-center gap-2">
-                              <span className="font-bold text-gray-800 text-xs w-4 shrink-0">{idx + 1}</span>
-                              <span className="text-xs text-gray-700 truncate flex-1">{v.vendedor}</span>
-                              <div className="w-12 h-1.5 bg-gray-100 rounded-full overflow-hidden shrink-0 hidden sm:block">
-                                <div
-                                  className="h-full bg-main rounded-full"
-                                  style={{ width: `${relPct}%` }}
-                                />
-                              </div>
-                              <span className="text-xs font-semibold text-gray-600 w-6 text-right shrink-0">
-                                {v.n}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
+                <div className="bg-blue-50 text-blue-700 text-sm rounded-lg p-4 mb-4">
+                  Nombre real del vendedor (carga histórica de Pilot + webhook en vivo en estado
+                  &quot;Registrado&quot;) — acotado a solo <b>{data?.anioActual}</b> a propósito, para
+                  no mezclar en el ranking a alguien que ya no trabaja en la empresa con el equipo
+                  actual.
+                </div>
+                <div className="bg-white rounded-xl shadow-sm p-5">
+                  <h3 className="font-semibold text-gray-800 mb-3">Ranking por unidades ({data?.anioActual})</h3>
+                  <ResponsiveContainer width="100%" height={500}>
+                    <BarChart data={data?.porVendedor || []} layout="vertical" margin={{ left: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                      <XAxis type="number" />
+                      <YAxis type="category" dataKey="vendedor" width={180} tick={{ fontSize: 11 }} />
+                      <Tooltip formatter={(v, n, p) => [`${v} unidades — ${p.payload.agencia}`]} />
+                      <Bar dataKey="n" fill="#e43d30" radius={[0, 6, 6, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               </motion.div>
             )}
