@@ -84,15 +84,22 @@ async function handler(req, res) {
   ]);
   const porVendedorMap = new Map();
   for (const r of [...porVendedorHistorico, ...porVendedorEnVivo]) {
+    // El webhook en vivo trae el nombre del vendedor con un espacio al final
+    // en algunos casos (mismo tipo de dato crudo que "estado"), mientras el
+    // historico no - sin el trim() esa misma persona quedaba partida en 2
+    // filas distintas del ranking (una por fuente).
+    const vendedor = (r.vendedor || "").trim();
     const agencia = normalizarAgencia(r.agencia);
-    const key = `${r.vendedor}|${agencia}`;
+    const key = `${vendedor}|${agencia}`;
     porVendedorMap.set(key, {
-      vendedor: r.vendedor,
+      vendedor,
       agencia,
       n: (porVendedorMap.get(key)?.n || 0) + Number(r.n),
     });
   }
-  const porVendedor = [...porVendedorMap.values()].sort((a, b) => b.n - a.n).slice(0, 30);
+  // Sin límite (antes .slice(0, 30)): el frontend ahora agrupa por sucursal,
+  // asi que necesita el listado completo, no solo el top 30 global.
+  const porVendedor = [...porVendedorMap.values()].sort((a, b) => b.n - a.n);
 
   // Rentabilidad: baseline historico (para tener con que comparar) + eventos
   // reales en vivo del webhook (VentaWebhookLog) que se van acumulando desde
