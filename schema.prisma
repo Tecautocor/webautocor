@@ -205,6 +205,46 @@ model LeadLog {
   createdAt  DateTime @default(now())
 }
 
+// Leads de Pilot (todos los canales: web, Atom/WhatsApp, RRSS, showroom...)
+// recibidos en vivo por webhook desde una regla de negocio de Pilot sobre la
+// entidad Leads. Mismo criterio que VentaWebhookLog: no guarda PII del
+// cliente en columnas tipadas; rawPayload queda como respaldo del evento.
+model LeadWebhookLog {
+  id              Int       @id @default(autoincrement())
+  leadId          String?
+  estado          String?
+  origen          String?
+  suborigen       String?
+  tipoNegocio     String?
+  tipoContacto    String?
+  sucursal        String?
+  asesor          String?
+  fechaCreacion   DateTime?
+  rawPayload      Json?
+  receivedAt      DateTime  @default(now())
+}
+
+// Carga historica de leads desde el export manual de Pilot (modulo Leads,
+// "pilot data leads.xlsx"). Tabla separada del webhook, igual que
+// VentaHistoricoImport. leadId unico para poder recargar un export mas
+// completo con upsert, sin borrar filas.
+model LeadHistoricoImport {
+  id              Int       @id @default(autoincrement())
+  leadId          String    @unique
+  estado          String?
+  origen          String?
+  suborigen       String?
+  tipoNegocio     String?
+  tipoContacto    String?
+  sucursal        String?
+  asesor          String?
+  vendido         Boolean   @default(false)
+  fechaCreacion   DateTime?
+  fechaAsignacion DateTime?
+  fechaGestion    DateTime?
+  importedAt      DateTime  @default(now())
+}
+
 // Carga historica de un export manual de Pilot (CSV "Base compras ventas",
 // el mismo que alimentaba el BI viejo) - tabla SEPARADA de VentaWebhookLog
 // a proposito: es "data de prueba" hasta que se confirme que el mapeo de
