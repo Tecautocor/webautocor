@@ -57,6 +57,12 @@ async function handler(req, res) {
     })
     .sort((a, b) => a.anio - b.anio || a.mes - b.mes);
 
+  // Comparativas "al dia": mismo rango de fechas este anio vs el anterior
+  // (1-ene a hoy, y 1ro del mes a hoy). La comparativa por meses de arriba
+  // cuenta el mes en curso completo del anio anterior contra el mes a medias
+  // de este anio; estas no. "Hoy" se toma en hora de Ecuador.
+  const comparativaAlDia = await calcularComparativaAlDia();
+
   // Vendedores: SOLO el anio en curso (a proposito - un ranking con todo el
   // historico mezclaria vendedores que ya no trabajan ahi con el equipo
   // actual). Combina la carga historica con el webhook en vivo en estado
@@ -158,6 +164,7 @@ async function handler(req, res) {
   return res.status(200).json({
     anioActual,
     ventasPorAnioMes: ventasPorAnioMes.map((r) => ({ anio: Number(r.anio), mes: Number(r.mes), n: Number(r.n) })),
+    comparativaAlDia,
     porVendedor: porVendedor.map((r) => ({ vendedor: r.vendedor, agencia: r.agencia, n: Number(r.n) })),
     rentabilidadHistorico: {
       n: Number(h.n),
@@ -168,6 +175,79 @@ async function handler(req, res) {
     },
     rentabilidadEnVivo: enVivo,
   });
+}
+
+// Ventas registradas con fechaAlta en [desde, hasta) - mismas dos fuentes y
+// misma exclusion de duplicados que la comparativa interanual.
+async function contarVentas(desde, hasta) {
+  const [[hist], [vivo]] = await Promise.all([
+    db.$queryRawUnsafe(
+      `SELECT COUNT(*) AS n
+       FROM VentaHistoricoImport h
+       LEFT JOIN (SELECT DISTINCT ventaId FROM VentaWebhookLog WHERE TRIM(estado) = 'REGISTRADO') w
+         ON w.ventaId = h.ventaId
+       WHERE h.fechaAlta >= ? AND h.fechaAlta < ? AND w.ventaId IS NULL`,
+      desde,
+      hasta
+    ),
+    db.$queryRawUnsafe(
+      `SELECT COUNT(DISTINCT ventaId) AS n
+       FROM VentaWebhookLog
+       WHERE TRIM(estado) = 'REGISTRADO' AND fechaAlta >= ? AND fechaAlta < ?`,
+      desde,
+      hasta
+    ),
+  ]);
+  return Number(hist.n) + Number(vivo.n);
+}
+
+const pad = (n) => String(n).padStart(2, "0");
+const fechaStr = (anio, mes, dia) => `${anio}-${pad(mes)}-${pad(dia)}`;
+// Dia siguiente (limite exclusivo del rango), sin problemas de zona horaria.
+const diaSiguiente = (anio, mes, dia) => {
+  const d = new Date(Date.UTC(anio, mes - 1, dia + 1));
+  return fechaStr(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
+};
+
+async function calcularComparativaAlDia() {
+  const hoyEc = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Guayaquil" }).format(new Date());
+  const [anio, mes, dia] = hoyEc.split("-").map(Number);
+  const anioAnt = anio - 1;
+  // 29-feb no existe el anio anterior: se compara hasta el 28.
+  const ultimoDiaMesAnt = new Date(Date.UTC(anioAnt, mes, 0)).getUTCDate();
+  const diaAnt = Math.min(dia, ultimoDiaMesAnt);
+  const mesSiguienteAnt = new Date(Date.UTC(anioAnt, mes, 1));
+
+  const [ytdActual, ytdAnterior, mesActual, mesAnterior, mesAnteriorCompleto, [ultima]] = await Promise.all([
+    contarVentas(fechaStr(anio, 1, 1), diaSiguiente(anio, mes, dia)),
+    contarVentas(fechaStr(anioAnt, 1, 1), diaSiguiente(anioAnt, mes, diaAnt)),
+    contarVentas(fechaStr(anio, mes, 1), diaSiguiente(anio, mes, dia)),
+    contarVentas(fechaStr(anioAnt, mes, 1), diaSiguiente(anioAnt, mes, diaAnt)),
+    contarVentas(
+      fechaStr(anioAnt, mes, 1),
+      fechaStr(mesSiguienteAnt.getUTCFullYear(), mesSiguienteAnt.getUTCMonth() + 1, 1)
+    ),
+    // Ultima venta con datos: si la base no esta al dia (ej. copia local),
+    // la comparativa "al dia" sale baja sin que sea una caida real.
+    db.$queryRawUnsafe(
+      `SELECT MAX(f) AS ultima FROM (
+         SELECT MAX(fechaAlta) AS f FROM VentaHistoricoImport
+         UNION ALL
+         SELECT MAX(fechaAlta) FROM VentaWebhookLog WHERE TRIM(estado) = 'REGISTRADO'
+       ) t`
+    ),
+  ]);
+
+  return {
+    hoy: hoyEc,
+    anio,
+    anioAnterior: anioAnt,
+    mes,
+    dia,
+    ytd: { actual: ytdActual, anterior: ytdAnterior },
+    mesEnCurso: { actual: mesActual, anterior: mesAnterior, anteriorCompleto: mesAnteriorCompleto },
+    ultimaVenta: ultima?.ultima || null,
+  };
 }
 
 export default handler;

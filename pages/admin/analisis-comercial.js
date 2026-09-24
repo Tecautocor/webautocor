@@ -24,7 +24,8 @@ export async function getServerSideProps(context) {
 }
 
 const MESES_LABEL = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-const COLORES_ANIO = { 2023: "#94a3b8", 2024: "#1d4ed8", 2025: "#0891b2", 2026: "#e43d30" };
+const ANIO_INICIO_INTERANUAL = 2023;
+const COLORES_ANIO ={ 2023: "#94a3b8", 2024: "#1d4ed8", 2025: "#0891b2", 2026: "#e43d30" };
 
 const TABS = [
   { key: "interanual", label: "Comparativa Interanual", icon: ArrowTrendingUpIcon },
@@ -32,12 +33,35 @@ const TABS = [
   { key: "rentabilidad", label: "Rentabilidad y Financiamiento", icon: BanknotesIcon },
 ];
 
+const MESES_NOMBRE = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
+
+function TarjetaCrecimiento({ titulo, detalle, actual, anterior }) {
+  const pct = anterior ? ((actual - anterior) / anterior) * 100 : 0;
+  return (
+    <div className="bg-white rounded-xl shadow-sm p-5">
+      <div className="text-3xl font-bold tabular-nums" style={{ color: pct >= 0 ? "#16a34a" : "#dc2626" }}>
+        <AnimatedNumber value={pct} format={(n) => (n >= 0 ? "+" : "") + n.toFixed(1) + "%"} />
+      </div>
+      <div className="text-sm font-medium text-gray-700 mt-1">{titulo}</div>
+      <div className="text-xs text-gray-500">
+        {actual} vs {anterior} unidades
+      </div>
+      <div className="text-xs text-gray-400 mt-1">{detalle}</div>
+    </div>
+  );
+}
+
 const currency = (n) => "$" + Math.round(n || 0).toLocaleString("es-EC");
 
 export default function AdminAnalisisComercial({ userEmail }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("interanual");
+  // null = todos los años visibles; un año = solo ese año en el gráfico interanual.
+  const [anioSolo, setAnioSolo] = useState(null);
 
   useEffect(() => {
     fetch("/api/admin/analisis-comercial")
@@ -49,7 +73,8 @@ export default function AdminAnalisisComercial({ userEmail }) {
   }, []);
 
   const anios = useMemo(() => {
-    const set = new Set((data?.ventasPorAnioMes || []).map((v) => v.anio));
+    // 2022 solo trae los ultimos dias de diciembre (inicio de la carga historica), no es comparable.
+    const set = new Set((data?.ventasPorAnioMes || []).map((v) => v.anio).filter((a) => a >= ANIO_INICIO_INTERANUAL));
     return [...set].sort();
   }, [data]);
 
@@ -78,6 +103,11 @@ export default function AdminAnalisisComercial({ userEmail }) {
     const anterior = sum(anioAnterior);
     return { anioActual, anioAnterior, actual, anterior, pct: anterior ? ((actual - anterior) / anterior) * 100 : 0 };
   }, [data, anios]);
+
+  const alDia = data?.comparativaAlDia || null;
+  // Mas de 2 dias entre la ultima venta y hoy = la base no esta al dia (normal en la copia local).
+  const datosDesactualizados =
+    alDia?.ultimaVenta && (new Date(alDia.hoy) - new Date(alDia.ultimaVenta.slice(0, 10))) / 86400000 > 2;
 
   const porVendedorList = data?.porVendedor || [];
   const top3Vendedores = useMemo(() => porVendedorList.slice(0, 3), [porVendedorList]);
@@ -136,18 +166,40 @@ export default function AdminAnalisisComercial({ userEmail }) {
           <AnimatePresence mode="wait">
             {tab === "interanual" && (
               <motion.div key="interanual" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                {crecimientoYTD && (
-                  <div className="bg-white rounded-xl shadow-sm p-5 mb-4 flex items-center gap-4">
-                    <div>
-                      <div className="text-3xl font-bold tabular-nums" style={{ color: crecimientoYTD.pct >= 0 ? "#16a34a" : "#dc2626" }}>
-                        <AnimatedNumber value={crecimientoYTD.pct} format={(n) => (n >= 0 ? "+" : "") + n.toFixed(1) + "%"} />
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        Crecimiento YTD {crecimientoYTD.anioActual} vs {crecimientoYTD.anioAnterior} (
-                        {crecimientoYTD.actual} vs {crecimientoYTD.anterior} unidades)
-                      </div>
-                    </div>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  {crecimientoYTD && (
+                    <TarjetaCrecimiento
+                      titulo={`Crecimiento YTD ${crecimientoYTD.anioActual} vs ${crecimientoYTD.anioAnterior}`}
+                      detalle={`Por meses completos, ene–${MESES_LABEL[new Date().getMonth()].toLowerCase()}`}
+                      actual={crecimientoYTD.actual}
+                      anterior={crecimientoYTD.anterior}
+                    />
+                  )}
+                  {alDia && (
+                    <TarjetaCrecimiento
+                      titulo={`Crecimiento al día ${alDia.anio} vs ${alDia.anioAnterior}`}
+                      detalle={`1 ene – ${alDia.dia} ${MESES_LABEL[alDia.mes - 1].toLowerCase()} de cada año`}
+                      actual={alDia.ytd.actual}
+                      anterior={alDia.ytd.anterior}
+                    />
+                  )}
+                  {alDia && (
+                    <TarjetaCrecimiento
+                      titulo={`${MESES_NOMBRE[alDia.mes - 1]} ${alDia.anio} vs ${MESES_NOMBRE[alDia.mes - 1].toLowerCase()} ${alDia.anioAnterior}`}
+                      detalle={`Del 1 al ${alDia.dia} de ${MESES_NOMBRE[alDia.mes - 1].toLowerCase()} · ${
+                        MESES_NOMBRE[alDia.mes - 1].toLowerCase()
+                      } ${alDia.anioAnterior} completo: ${alDia.mesEnCurso.anteriorCompleto} u.`}
+                      actual={alDia.mesEnCurso.actual}
+                      anterior={alDia.mesEnCurso.anterior}
+                    />
+                  )}
+                </div>
+                {alDia && datosDesactualizados && (
+                  <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mb-4">
+                    La última venta registrada en la base es del {alDia.ultimaVenta.slice(0, 10)}: las
+                    comparativas al día cuentan hasta hoy ({alDia.hoy}), así que los días sin datos bajan
+                    el año actual.
+                  </p>
                 )}
                 <div className="bg-white rounded-xl shadow-sm p-5">
                   <h3 className="font-semibold text-gray-800 mb-1">Ventas cerradas por mes, comparado año a año</h3>
@@ -155,13 +207,51 @@ export default function AdminAnalisisComercial({ userEmail }) {
                     Fuente: carga histórica real de Pilot (2023 en adelante) + webhook en vivo de
                     Pilot en estado &quot;Registrado&quot; (desde el 20 de agosto {new Date().getFullYear()}).
                   </p>
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <button
+                      onClick={() => setAnioSolo(null)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+                        anioSolo === null ? "bg-gray-800 text-white border-gray-800" : "text-gray-600 border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      Todos
+                    </button>
+                    {anios.map((anio) => {
+                      const activo = anioSolo === anio;
+                      const color = COLORES_ANIO[anio] || "#999";
+                      return (
+                        <button
+                          key={anio}
+                          onClick={() => setAnioSolo(activo ? null : anio)}
+                          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition ${
+                            activo ? "text-white" : "text-gray-600 border-gray-300 hover:bg-gray-50"
+                          }`}
+                          style={activo ? { backgroundColor: color, borderColor: color } : undefined}
+                        >
+                          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: activo ? "#fff" : color }} />
+                          {anio}
+                          {activo && (
+                            <span className="tabular-nums opacity-90">
+                              · {(data?.ventasPorAnioMes || []).filter((v) => v.anio === anio).reduce((s, v) => s + v.n, 0)} u.
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                   <ResponsiveContainer width="100%" height={340}>
                     <LineChart data={interanualData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="mes" tick={{ fontSize: 12 }} />
                       <YAxis tick={{ fontSize: 12 }} />
                       <Tooltip />
-                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                      <Legend
+                        wrapperStyle={{ fontSize: 12, cursor: "pointer" }}
+                        onClick={(e) => {
+                          const anio = Number(e.dataKey);
+                          setAnioSolo((prev) => (prev === anio ? null : anio));
+                        }}
+                      />
                       {anios.map((anio) => (
                         <Line
                           key={anio}
@@ -169,8 +259,9 @@ export default function AdminAnalisisComercial({ userEmail }) {
                           dataKey={anio}
                           name={String(anio)}
                           stroke={COLORES_ANIO[anio] || "#999"}
-                          strokeWidth={anio === anios[anios.length - 1] ? 3 : 2}
+                          strokeWidth={anioSolo === anio || anio === anios[anios.length - 1] ? 3 : 2}
                           dot={{ r: 3 }}
+                          hide={anioSolo !== null && anioSolo !== anio}
                           connectNulls
                         />
                       ))}
