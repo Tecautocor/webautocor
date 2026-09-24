@@ -168,7 +168,9 @@ async function handler(req, res) {
       receivedAt: true,
     },
     orderBy: { receivedAt: "desc" },
-    take: 500,
+    // Antes 500: ahora el frontend filtra por mes/agencia, y con ~200 ventas al
+    // mes un tope bajo cortaria en silencio los meses mas viejos.
+    take: 3000,
   });
   // Pilot puede reenviar el mismo webhook mas de una vez para la misma venta
   // (mismo patron ya manejado con GROUP BY ventaId en Performance/Embudo) -
@@ -176,11 +178,14 @@ async function handler(req, res) {
   // (ya viene ordenado por receivedAt desc, asi que la primera ocurrencia es
   // la mas nueva).
   const ventaIdVistos = new Set();
-  const enVivo = enVivoRaw.filter((r) => {
-    if (ventaIdVistos.has(r.ventaId)) return false;
-    ventaIdVistos.add(r.ventaId);
-    return true;
-  });
+  const enVivo = enVivoRaw
+    .filter((r) => {
+      if (ventaIdVistos.has(r.ventaId)) return false;
+      ventaIdVistos.add(r.ventaId);
+      return true;
+    })
+    // Mismo nombre de agencia que el ranking de vendedores (alias El Recreo -> Quicentro Sur).
+    .map((r) => ({ ...r, sucursal: normalizarAgencia(r.sucursal) }));
 
   const h = historicoAgg[0];
 

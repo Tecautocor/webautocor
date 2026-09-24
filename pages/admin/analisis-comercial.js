@@ -98,6 +98,11 @@ export default function AdminAnalisisComercial({ userEmail }) {
   const [anioSolo, setAnioSolo] = useState(null);
   // null = anio completo; 1-12 = ranking de vendedores solo de ese mes.
   const [mesVendedores, setMesVendedores] = useState(null);
+  // Filtros de Rentabilidad "En vivo": "" = todas / todos; mes en formato "YYYY-MM".
+  const [filtroAgencia, setFiltroAgencia] = useState("");
+  const [filtroMes, setFiltroMes] = useState("");
+  const [ventasVisibles, setVentasVisibles] = useState(30);
+  useEffect(() => setVentasVisibles(30), [filtroAgencia, filtroMes]);
 
   useEffect(() => {
     fetch("/api/admin/analisis-comercial")
@@ -241,31 +246,50 @@ export default function AdminAnalisisComercial({ userEmail }) {
 
   const rentabilidadEnVivo = data?.rentabilidadEnVivo || [];
   const rentHistorico = data?.rentabilidadHistorico || null;
-  // Las 30 mas recientes por fecha de venta (el API las trae por fecha de recepcion del webhook).
-  const ultimasVentas = useMemo(
-    () =>
-      [...rentabilidadEnVivo]
-        .sort((a, b) => String(b.fechaAlta || "").localeCompare(String(a.fechaAlta || "")))
-        .slice(0, 30),
+  // Opciones de los filtros de "En vivo", sacadas de los propios datos.
+  const agenciasEnVivo = useMemo(
+    () => [...new Set(rentabilidadEnVivo.map((r) => r.sucursal).filter(Boolean))].sort(),
     [rentabilidadEnVivo]
   );
+  const mesesEnVivo = useMemo(
+    () =>
+      [...new Set(rentabilidadEnVivo.map((r) => (r.fechaAlta ? r.fechaAlta.slice(0, 7) : null)).filter(Boolean))]
+        .sort()
+        .reverse(),
+    [rentabilidadEnVivo]
+  );
+  const enVivoFiltrado = useMemo(
+    () =>
+      rentabilidadEnVivo.filter(
+        (r) =>
+          (!filtroAgencia || r.sucursal === filtroAgencia) &&
+          (!filtroMes || (r.fechaAlta && r.fechaAlta.startsWith(filtroMes)))
+      ),
+    [rentabilidadEnVivo, filtroAgencia, filtroMes]
+  );
+  // Mas recientes primero por fecha de venta (el API las trae por fecha de recepcion del webhook).
+  const ventasOrdenadas = useMemo(
+    () => [...enVivoFiltrado].sort((a, b) => String(b.fechaAlta || "").localeCompare(String(a.fechaAlta || ""))),
+    [enVivoFiltrado]
+  );
+  const ultimasVentas = ventasOrdenadas.slice(0, ventasVisibles);
   const enVivoKpis = useMemo(() => {
-    if (rentabilidadEnVivo.length === 0) return null;
-    const n = rentabilidadEnVivo.length;
+    if (enVivoFiltrado.length === 0) return null;
+    const n = enVivoFiltrado.length;
     // Promedio ignorando vacios, igual que el AVG() del historico. (Descuento
     // vendedor/gerente y comision llegan siempre vacios desde Pilot: no se usan.)
     const avg = (key) => {
-      const vals = rentabilidadEnVivo.map((r) => r[key]).filter((v) => v !== null && v !== undefined);
+      const vals = enVivoFiltrado.map((r) => r[key]).filter((v) => v !== null && v !== undefined);
       return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
     };
-    const financiadas = rentabilidadEnVivo.filter((r) => (r.montoFinanciado || 0) > 0).length;
+    const financiadas = enVivoFiltrado.filter((r) => (r.montoFinanciado || 0) > 0).length;
     return {
       n,
       descuentoProm: avg("pctDescuento"),
       ticketPromedio: avg("totalTransaccion"),
       pctFinanciadas: (financiadas / n) * 100,
     };
-  }, [rentabilidadEnVivo]);
+  }, [enVivoFiltrado]);
 
   return (
     <AdminLayout userEmail={userEmail} title="Análisis Comercial" backHref="/admin/bi">
@@ -577,7 +601,7 @@ export default function AdminAnalisisComercial({ userEmail }) {
                 )}
 
                 <h3 className="text-sm font-semibold text-gray-500 mb-2">En vivo (webhook de Pilot)</h3>
-                {!enVivoKpis ? (
+                {rentabilidadEnVivo.length === 0 ? (
                   <div className="bg-white rounded-xl shadow-sm p-10 text-center">
                     <BanknotesIcon className="h-10 w-10 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-500 text-sm max-w-md mx-auto">
@@ -587,6 +611,58 @@ export default function AdminAnalisisComercial({ userEmail }) {
                     </p>
                   </div>
                 ) : (
+                  <>
+                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                      <label className="flex items-center gap-2 text-sm text-gray-600">
+                        Agencia
+                        <select
+                          value={filtroAgencia}
+                          onChange={(e) => setFiltroAgencia(e.target.value)}
+                          className="border border-gray-300 rounded-md px-2 py-1 text-sm bg-white"
+                        >
+                          <option value="">Todas</option>
+                          {agenciasEnVivo.map((a) => (
+                            <option key={a} value={a}>
+                              {a.replace(/^Autocor\s+/i, "")}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-gray-600">
+                        Mes
+                        <select
+                          value={filtroMes}
+                          onChange={(e) => setFiltroMes(e.target.value)}
+                          className="border border-gray-300 rounded-md px-2 py-1 text-sm bg-white"
+                        >
+                          <option value="">Todos</option>
+                          {mesesEnVivo.map((m) => (
+                            <option key={m} value={m}>
+                              {MESES_NOMBRE[Number(m.slice(5, 7)) - 1]} {m.slice(0, 4)}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <span className="text-sm text-gray-500 tabular-nums">
+                        {enVivoFiltrado.length} {enVivoFiltrado.length === 1 ? "venta" : "ventas"}
+                      </span>
+                      {(filtroAgencia || filtroMes) && (
+                        <button
+                          onClick={() => {
+                            setFiltroAgencia("");
+                            setFiltroMes("");
+                          }}
+                          className="text-xs text-main hover:underline"
+                        >
+                          Quitar filtros
+                        </button>
+                      )}
+                    </div>
+                    {!enVivoKpis ? (
+                      <div className="bg-white rounded-xl shadow-sm p-8 text-center text-sm text-gray-500">
+                        No hay ventas registradas para este filtro.
+                      </div>
+                    ) : (
                   <>
                     <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-4">
                       <div className="bg-white rounded-xl shadow-sm p-5">
@@ -609,7 +685,22 @@ export default function AdminAnalisisComercial({ userEmail }) {
                       </div>
                     </div>
                     <div className="bg-white rounded-xl shadow-sm p-5 overflow-x-auto">
-                      <h3 className="font-semibold text-gray-800 mb-3">Últimas ventas registradas</h3>
+                      <h3 className="font-semibold text-gray-800 mb-3">
+                        Últimas ventas registradas
+                        {(filtroAgencia || filtroMes) && (
+                          <span className="font-normal text-gray-400 text-sm">
+                            {" "}(
+                            {[
+                              filtroAgencia && filtroAgencia.replace(/^Autocor\s+/i, ""),
+                              filtroMes &&
+                                `${MESES_NOMBRE[Number(filtroMes.slice(5, 7)) - 1].toLowerCase()} ${filtroMes.slice(0, 4)}`,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                            )
+                          </span>
+                        )}
+                      </h3>
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="text-left text-gray-400 text-xs uppercase border-b">
@@ -680,7 +771,19 @@ export default function AdminAnalisisComercial({ userEmail }) {
                           ))}
                         </tbody>
                       </table>
+                      {ventasOrdenadas.length > ultimasVentas.length && (
+                        <div className="text-center mt-3">
+                          <button
+                            onClick={() => setVentasVisibles((v) => v + 30)}
+                            className="text-sm text-main font-medium hover:underline"
+                          >
+                            Ver más ({ventasOrdenadas.length - ultimasVentas.length} restantes)
+                          </button>
+                        </div>
+                      )}
                     </div>
+                  </>
+                    )}
                   </>
                 )}
               </motion.div>
