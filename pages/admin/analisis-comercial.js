@@ -54,6 +54,40 @@ function TarjetaCrecimiento({ titulo, detalle, actual, anterior }) {
   );
 }
 
+const ritmoTexto = (factor) => {
+  const pct = Math.round((factor - 1) * 100);
+  return pct >= 0 ? `${pct}% más que el año anterior` : `${-pct}% menos que el año anterior`;
+};
+
+function VariacionVsAnterior({ cierre, anterior, anio, small }) {
+  const pct = anterior ? ((cierre - anterior) / anterior) * 100 : 0;
+  return (
+    <span className={`tabular-nums font-medium ${small ? "text-xs" : ""}`} style={{ color: pct >= 0 ? "#16a34a" : "#dc2626" }}>
+      {pct >= 0 ? "+" : ""}
+      {pct.toFixed(1)}% vs {anterior.toLocaleString("es-EC")} u. de {anio}
+    </span>
+  );
+}
+
+// Diferencia en unidades contra el mes anterior: ▲ verde, ▼ roja, = gris.
+function Delta({ actual, anterior }) {
+  const d = actual - anterior;
+  if (d === 0) return <span className="text-xs font-medium text-gray-400 tabular-nums">=</span>;
+  return (
+    <span className="text-xs font-medium tabular-nums" style={{ color: d > 0 ? "#16a34a" : "#dc2626" }}>
+      {d > 0 ? "▲" : "▼"} {Math.abs(d)}
+    </span>
+  );
+}
+
+// fechaAlta llega como hora local de Pilot guardada tal cual: se leen las partes UTC para no correrla.
+const fechaCorta = (iso) => {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}/${d.getUTCFullYear()}`;
+};
+const capitalizar = (s) => s.trim().toLowerCase().replace(/^\p{L}/u, (c) => c.toUpperCase());
+
 const currency = (n) => "$" + Math.round(n || 0).toLocaleString("es-EC");
 
 export default function AdminAnalisisComercial({ userEmail }) {
@@ -62,6 +96,8 @@ export default function AdminAnalisisComercial({ userEmail }) {
   const [tab, setTab] = useState("interanual");
   // null = todos los años visibles; un año = solo ese año en el gráfico interanual.
   const [anioSolo, setAnioSolo] = useState(null);
+  // null = anio completo; 1-12 = ranking de vendedores solo de ese mes.
+  const [mesVendedores, setMesVendedores] = useState(null);
 
   useEffect(() => {
     fetch("/api/admin/analisis-comercial")
@@ -78,6 +114,59 @@ export default function AdminAnalisisComercial({ userEmail }) {
     return [...set].sort();
   }, [data]);
 
+  // Proyeccion de cierre del anio en curso: cada mes que falta = mismo mes del
+  // anio anterior x factor de ritmo. Asi respeta la estacionalidad (oct/dic
+  // altos, nov bajo). Dos escenarios:
+  // - principal: ritmo de los ultimos 3 meses cerrados vs los mismos meses del
+  //   anio anterior (refleja como va el negocio ahora; no cambia dia a dia).
+  // - referencia: ritmo de todo el anio (1-ene a la fecha de corte).
+  const proyeccion = useMemo(() => {
+    const cd = data?.comparativaAlDia;
+    const factorAnio = cd?.proyeccion?.factor;
+    if (!cd || !factorAnio) return null;
+    const ventasDe = (anio, mes) =>
+      (data.ventasPorAnioMes || []).find((v) => v.anio === anio && v.mes === mes)?.n || 0;
+
+    // Meses cerrados del anio en curso (hasta 3). En enero no hay ninguno:
+    // se usa el ritmo del anio como principal.
+    const mesesRecientes = [];
+    for (let mes = Math.max(1, cd.mes - 3); mes < cd.mes; mes++) mesesRecientes.push(mes);
+    const recienteActual = mesesRecientes.reduce((s, m) => s + ventasDe(cd.anio, m), 0);
+    const recienteAnterior = mesesRecientes.reduce((s, m) => s + ventasDe(cd.anioAnterior, m), 0);
+    const factorReciente = recienteAnterior ? recienteActual / recienteAnterior : factorAnio;
+
+    const escenario = (factor) => {
+      const porMes = {};
+      let cierre = 0;
+      for (let mes = 1; mes <= 12; mes++) {
+        const real = ventasDe(cd.anio, mes);
+        const estimado = Math.round(ventasDe(cd.anioAnterior, mes) * factor);
+        let valor;
+        if (mes < cd.mes) valor = real;
+        else if (mes === cd.mes) valor = Math.max(real, estimado);
+        else valor = estimado;
+        if (mes >= cd.mes) porMes[mes] = valor;
+        cierre += valor;
+      }
+      // Punto de arranque de la linea punteada: el ultimo mes cerrado (real).
+      if (cd.mes > 1) porMes[cd.mes - 1] = ventasDe(cd.anio, cd.mes - 1);
+      return { factor, porMes, cierre };
+    };
+
+    const totalAnterior = (data.ventasPorAnioMes || [])
+      .filter((v) => v.anio === cd.anioAnterior)
+      .reduce((s, v) => s + v.n, 0);
+    return {
+      anio: cd.anio,
+      anioAnterior: cd.anioAnterior,
+      corte: cd.proyeccion.corte,
+      mesesRecientes,
+      totalAnterior,
+      principal: escenario(factorReciente),
+      referencia: escenario(factorAnio),
+    };
+  }, [data]);
+
   const interanualData = useMemo(() => {
     return MESES_LABEL.map((label, i) => {
       const mes = i + 1;
@@ -86,9 +175,10 @@ export default function AdminAnalisisComercial({ userEmail }) {
         const found = (data?.ventasPorAnioMes || []).find((v) => v.anio === anio && v.mes === mes);
         row[anio] = found ? found.n : null;
       }
+      row.proyeccion = proyeccion?.principal.porMes[mes] ?? null;
       return row;
     });
-  }, [data, anios]);
+  }, [data, anios, proyeccion]);
 
   const crecimientoYTD = useMemo(() => {
     if (anios.length < 2) return null;
@@ -109,8 +199,30 @@ export default function AdminAnalisisComercial({ userEmail }) {
   const datosDesactualizados =
     alDia?.ultimaVenta && (new Date(alDia.hoy) - new Date(alDia.ultimaVenta.slice(0, 10))) / 86400000 > 2;
 
-  const porVendedorList = data?.porVendedor || [];
-  const top3Vendedores = useMemo(() => porVendedorList.slice(0, 3), [porVendedorList]);
+  // Meses del anio en curso con ventas, para los botones del filtro.
+  const mesesVendedores = useMemo(
+    () => [...new Set((data?.porVendedorMes || []).map((r) => r.mes))].sort((a, b) => a - b),
+    [data]
+  );
+  const porVendedorList = useMemo(() => {
+    if (mesVendedores === null) return data?.porVendedor || [];
+    return (data?.porVendedorMes || []).filter((r) => r.mes === mesVendedores).sort((a, b) => b.n - a.n);
+  }, [data, mesVendedores]);
+  // Ventas del mes anterior por vendedor|agencia, para comparar al filtrar por
+  // mes. En enero no hay mes anterior dentro del anio en curso: sin comparacion.
+  const mesAnteriorVendedores = mesVendedores !== null && mesVendedores > 1 ? mesVendedores - 1 : null;
+  const ventasMesAnterior = useMemo(() => {
+    const map = new Map();
+    if (mesAnteriorVendedores === null) return map;
+    for (const r of data?.porVendedorMes || []) {
+      if (r.mes === mesAnteriorVendedores) map.set(`${r.vendedor}|${r.agencia}`, r.n);
+    }
+    return map;
+  }, [data, mesAnteriorVendedores]);
+  const anteriorDe = (v) =>
+    mesAnteriorVendedores === null ? null : ventasMesAnterior.get(`${v.vendedor}|${v.agencia}`) || 0;
+
+  const top3Vendedores =useMemo(() => porVendedorList.slice(0, 3), [porVendedorList]);
   const porSucursal = useMemo(() => {
     const map = new Map();
     for (const v of porVendedorList) {
@@ -129,15 +241,28 @@ export default function AdminAnalisisComercial({ userEmail }) {
 
   const rentabilidadEnVivo = data?.rentabilidadEnVivo || [];
   const rentHistorico = data?.rentabilidadHistorico || null;
+  // Las 30 mas recientes por fecha de venta (el API las trae por fecha de recepcion del webhook).
+  const ultimasVentas = useMemo(
+    () =>
+      [...rentabilidadEnVivo]
+        .sort((a, b) => String(b.fechaAlta || "").localeCompare(String(a.fechaAlta || "")))
+        .slice(0, 30),
+    [rentabilidadEnVivo]
+  );
   const enVivoKpis = useMemo(() => {
     if (rentabilidadEnVivo.length === 0) return null;
     const n = rentabilidadEnVivo.length;
-    const avg = (key) => rentabilidadEnVivo.reduce((s, r) => s + (r[key] || 0), 0) / n;
+    // Promedio ignorando vacios, igual que el AVG() del historico. (Descuento
+    // vendedor/gerente y comision llegan siempre vacios desde Pilot: no se usan.)
+    const avg = (key) => {
+      const vals = rentabilidadEnVivo.map((r) => r[key]).filter((v) => v !== null && v !== undefined);
+      return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
+    };
     const financiadas = rentabilidadEnVivo.filter((r) => (r.montoFinanciado || 0) > 0).length;
     return {
       n,
-      descuentoVendedorProm: avg("descuentoVendedor"),
-      descuentoGerenteProm: avg("descuentoGerente"),
+      descuentoProm: avg("pctDescuento"),
+      ticketPromedio: avg("totalTransaccion"),
       pctFinanciadas: (financiadas / n) * 100,
     };
   }, [rentabilidadEnVivo]);
@@ -239,6 +364,32 @@ export default function AdminAnalisisComercial({ userEmail }) {
                       );
                     })}
                   </div>
+                  {proyeccion && (anioSolo === null || anioSolo === proyeccion.anio) && (
+                    <div className="mb-3 space-y-1">
+                      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
+                        <span className="text-gray-700">
+                          Cierre proyectado {proyeccion.anio}:{" "}
+                          <strong className="tabular-nums">~{proyeccion.principal.cierre.toLocaleString("es-EC")} u.</strong>
+                        </span>
+                        <VariacionVsAnterior cierre={proyeccion.principal.cierre} anterior={proyeccion.totalAnterior} anio={proyeccion.anioAnterior} />
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        Si se recupera el ritmo de inicio de año:{" "}
+                        <span className="tabular-nums font-medium text-gray-700">
+                          ~{proyeccion.referencia.cierre.toLocaleString("es-EC")} u.
+                        </span>{" "}
+                        <VariacionVsAnterior cierre={proyeccion.referencia.cierre} anterior={proyeccion.totalAnterior} anio={proyeccion.anioAnterior} small />
+                      </div>
+                      <p className="text-xs text-gray-400">
+                        Cada mes que falta = mismo mes de {proyeccion.anioAnterior} × ritmo actual (
+                        {proyeccion.mesesRecientes.length > 0
+                          ? `${proyeccion.mesesRecientes.map((m) => MESES_LABEL[m - 1].toLowerCase()).join("–")} ${proyeccion.anio} vs ${proyeccion.anioAnterior}`
+                          : `1-ene al ${proyeccion.corte.slice(8, 10)}/${proyeccion.corte.slice(5, 7)}`}
+                        : {ritmoTexto(proyeccion.principal.factor)}). Inicio de año = 1-ene al{" "}
+                        {proyeccion.corte.slice(8, 10)}/{proyeccion.corte.slice(5, 7)}: {ritmoTexto(proyeccion.referencia.factor)}.
+                      </p>
+                    </div>
+                  )}
                   <ResponsiveContainer width="100%" height={340}>
                     <LineChart data={interanualData}>
                       <CartesianGrid strokeDasharray="3 3" />
@@ -248,7 +399,7 @@ export default function AdminAnalisisComercial({ userEmail }) {
                       <Legend
                         wrapperStyle={{ fontSize: 12, cursor: "pointer" }}
                         onClick={(e) => {
-                          const anio = Number(e.dataKey);
+                          const anio = e.dataKey === "proyeccion" ? proyeccion?.anio : Number(e.dataKey);
                           setAnioSolo((prev) => (prev === anio ? null : anio));
                         }}
                       />
@@ -265,6 +416,19 @@ export default function AdminAnalisisComercial({ userEmail }) {
                           connectNulls
                         />
                       ))}
+                      {proyeccion && (
+                        <Line
+                          type="monotone"
+                          dataKey="proyeccion"
+                          name={`${proyeccion.anio} proyectado`}
+                          stroke={COLORES_ANIO[proyeccion.anio] || "#999"}
+                          strokeWidth={2}
+                          strokeDasharray="6 4"
+                          dot={{ r: 3, fill: "#fff" }}
+                          hide={anioSolo !== null && anioSolo !== proyeccion.anio}
+                          connectNulls
+                        />
+                      )}
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -273,6 +437,25 @@ export default function AdminAnalisisComercial({ userEmail }) {
 
             {tab === "vendedores" && (
               <motion.div key="vendedores" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                  {[null, ...mesesVendedores].map((mes) => {
+                    const activo = mesVendedores === mes;
+                    return (
+                      <button
+                        key={mes ?? "anio"}
+                        onClick={() => setMesVendedores(activo && mes !== null ? null : mes)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+                          activo ? "bg-main text-white border-main" : "text-gray-600 border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        {mes === null ? `Año ${data?.anioActual}` : MESES_LABEL[mes - 1]}
+                      </button>
+                    );
+                  })}
+                </div>
+                {top3Vendedores.length === 0 && (
+                  <p className="text-sm text-gray-500">No hay ventas registradas en este período.</p>
+                )}
                 {top3Vendedores.length > 0 && (
                   <div className="grid gap-4 grid-cols-1 sm:grid-cols-3 mb-6">
                     {top3Vendedores.map((v, i) => {
@@ -292,6 +475,14 @@ export default function AdminAnalisisComercial({ userEmail }) {
                           <div className={`text-2xl font-bold ${medal.text}`}>
                             {v.n} <span className="text-sm font-normal text-gray-500">unidades</span>
                           </div>
+                          {anteriorDe(v) !== null && (
+                            <div className="text-xs mt-1 flex items-center gap-1.5">
+                              <Delta actual={v.n} anterior={anteriorDe(v)} />
+                              <span className="text-gray-500">
+                                vs {MESES_LABEL[mesAnteriorVendedores - 1].toLowerCase()} ({anteriorDe(v)} u.)
+                              </span>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -299,7 +490,16 @@ export default function AdminAnalisisComercial({ userEmail }) {
                 )}
 
                 <h3 className="text-sm font-semibold text-gray-500 mb-3">
-                  Ranking por sucursal ({data?.anioActual})
+                  Ranking por sucursal (
+                  {mesVendedores === null
+                    ? data?.anioActual
+                    : `${MESES_NOMBRE[mesVendedores - 1].toLowerCase()} ${data?.anioActual}`}
+                  )
+                  {mesAnteriorVendedores !== null && (
+                    <span className="font-normal text-gray-400">
+                      {" "}· ▲▼ = unidades más o menos que en {MESES_NOMBRE[mesAnteriorVendedores - 1].toLowerCase()}
+                    </span>
+                  )}
                 </h3>
                 <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                   {porSucursal.map((s) => (
@@ -322,6 +522,14 @@ export default function AdminAnalisisComercial({ userEmail }) {
                               <span className="text-xs font-semibold text-gray-600 w-6 text-right shrink-0">
                                 {v.n}
                               </span>
+                              {anteriorDe(v) !== null && (
+                                <span
+                                  className="w-10 text-right shrink-0"
+                                  title={`${MESES_NOMBRE[mesAnteriorVendedores - 1]}: ${anteriorDe(v)} u.`}
+                                >
+                                  <Delta actual={v.n} anterior={anteriorDe(v)} />
+                                </span>
+                              )}
                             </div>
                           );
                         })}
@@ -362,9 +570,8 @@ export default function AdminAnalisisComercial({ userEmail }) {
                       </div>
                     </div>
                     <p className="text-xs text-gray-400 -mt-4 mb-6">
-                      El detalle de descuento autorizado por vendedor/gerente y comisión no está
-                      confiablemente poblado en la carga histórica — esos dos solo van a tener datos
-                      reales a partir del webhook en vivo.
+                      El descuento autorizado por vendedor/gerente y la comisión no vienen poblados
+                      desde Pilot (ni en la carga histórica ni en el webhook en vivo), por eso no se muestran.
                     </p>
                   </>
                 )}
@@ -376,8 +583,7 @@ export default function AdminAnalisisComercial({ userEmail }) {
                     <p className="text-gray-500 text-sm max-w-md mx-auto">
                       Todavía no hay eventos reales del webhook de Ventas (esperando que la primera
                       venta pase a estado <b>&quot;Registrado&quot;</b> en Pilot desde que se activó la
-                      regla). En cuanto lleguen, aquí se ve el detalle exacto de descuentos por
-                      vendedor/gerente y comisión que el histórico no tiene.
+                      regla). En cuanto lleguen, aquí se ve el detalle de cada venta.
                     </p>
                   </div>
                 ) : (
@@ -388,16 +594,18 @@ export default function AdminAnalisisComercial({ userEmail }) {
                         <div className="text-xs text-gray-500">Ventas registradas</div>
                       </div>
                       <div className="bg-white rounded-xl shadow-sm p-5">
-                        <div className="text-2xl font-bold text-gray-800">{currency(enVivoKpis.descuentoVendedorProm)}</div>
-                        <div className="text-xs text-gray-500">Descuento prom. (vendedor)</div>
+                        <div className="text-2xl font-bold text-gray-800">
+                          {enVivoKpis.descuentoProm !== null ? enVivoKpis.descuentoProm.toFixed(2) + "%" : "—"}
+                        </div>
+                        <div className="text-xs text-gray-500">Descuento promedio</div>
                       </div>
                       <div className="bg-white rounded-xl shadow-sm p-5">
-                        <div className="text-2xl font-bold text-gray-800">{currency(enVivoKpis.descuentoGerenteProm)}</div>
-                        <div className="text-xs text-gray-500">Descuento prom. (gerente)</div>
-                      </div>
-                      <div className="bg-white rounded-xl shadow-sm p-5">
-                        <div className="text-2xl font-bold text-gray-800">{enVivoKpis.pctFinanciadas.toFixed(0)}%</div>
+                        <div className="text-2xl font-bold text-gray-800">{enVivoKpis.pctFinanciadas.toFixed(1)}%</div>
                         <div className="text-xs text-gray-500">Ventas financiadas</div>
+                      </div>
+                      <div className="bg-white rounded-xl shadow-sm p-5">
+                        <div className="text-2xl font-bold text-gray-800">{currency(enVivoKpis.ticketPromedio)}</div>
+                        <div className="text-xs text-gray-500">Ticket promedio</div>
                       </div>
                     </div>
                     <div className="bg-white rounded-xl shadow-sm p-5 overflow-x-auto">
@@ -405,23 +613,69 @@ export default function AdminAnalisisComercial({ userEmail }) {
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="text-left text-gray-400 text-xs uppercase border-b">
-                            <th className="py-2 pr-2">Venta</th>
-                            <th className="py-2 pr-2">Sucursal</th>
-                            <th className="py-2 pr-2 text-right">Precio lista</th>
-                            <th className="py-2 pr-2 text-right">Total</th>
-                            <th className="py-2 pr-2 text-right">Financiado</th>
-                            <th className="py-2 pr-2">Banco</th>
+                            <th className="py-2 pr-3">Fecha</th>
+                            <th className="py-2 pr-3">Vehículo</th>
+                            <th className="py-2 pr-3">Vendedor</th>
+                            <th className="py-2 pr-3">Canal</th>
+                            <th className="py-2 pr-3 text-right">Precio lista</th>
+                            <th className="py-2 pr-3 text-right">Total</th>
+                            <th className="py-2 pr-3 text-right">Desc.</th>
+                            <th className="py-2 pr-3">Pago</th>
+                            <th className="py-2 pr-3">Retoma</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {rentabilidadEnVivo.slice(0, 30).map((r) => (
-                            <tr key={r.ventaId} className="border-b last:border-0">
-                              <td className="py-1.5 pr-2">{r.ventaId}</td>
-                              <td className="py-1.5 pr-2">{r.sucursal || "—"}</td>
-                              <td className="py-1.5 pr-2 text-right">{currency(r.precioLista)}</td>
-                              <td className="py-1.5 pr-2 text-right">{currency(r.totalTransaccion)}</td>
-                              <td className="py-1.5 pr-2 text-right">{currency(r.montoFinanciado)}</td>
-                              <td className="py-1.5 pr-2">{r.banco || "—"}</td>
+                          {ultimasVentas.map((r) => (
+                            <tr key={r.ventaId} className="border-b last:border-0 align-top">
+                              <td className="py-2 pr-3 whitespace-nowrap text-gray-600 tabular-nums">
+                                {fechaCorta(r.fechaAlta)}
+                                <div className="text-[11px] text-gray-400">#{r.ventaId}</div>
+                              </td>
+                              <td className="py-2 pr-3 min-w-[160px]">
+                                <div className="font-medium text-gray-800">
+                                  {[r.marca, r.modelo].filter(Boolean).join(" ") || "—"}
+                                </div>
+                                <div className="text-[11px] text-gray-400">
+                                  {[r.version, r.color && capitalizar(r.color)].filter(Boolean).join(" · ")}
+                                </div>
+                              </td>
+                              <td className="py-2 pr-3 min-w-[130px]">
+                                <div className="text-gray-700">{r.vendedorNombre?.trim() || "—"}</div>
+                                <div className="text-[11px] text-gray-400">{r.sucursal?.trim() || ""}</div>
+                              </td>
+                              <td className="py-2 pr-3 text-xs text-gray-600">{r.origen ? capitalizar(r.origen) : "—"}</td>
+                              <td className="py-2 pr-3 text-right tabular-nums text-gray-500">{currency(r.precioLista)}</td>
+                              <td className="py-2 pr-3 text-right tabular-nums font-medium">{currency(r.totalTransaccion)}</td>
+                              <td className="py-2 pr-3 text-right tabular-nums">
+                                {r.pctDescuento !== null && r.pctDescuento !== undefined
+                                  ? r.pctDescuento.toFixed(1).replace(".", ",") + " %"
+                                  : "—"}
+                              </td>
+                              <td className="py-2 pr-3 text-xs">
+                                {(r.montoFinanciado || 0) > 0 ? (
+                                  <>
+                                    <div className="text-gray-700">{r.banco?.trim() || "Financiado"}</div>
+                                    <div className="text-[11px] text-gray-400 tabular-nums">
+                                      {currency(r.montoFinanciado)}
+                                      {r.cuotasFinanciadas ? ` · ${r.cuotasFinanciadas} cuotas` : ""}
+                                    </div>
+                                  </>
+                                ) : (
+                                  <span className="text-gray-500">Contado</span>
+                                )}
+                              </td>
+                              <td className="py-2 pr-3 text-xs">
+                                {(r.montoRetomaUsado || 0) > 0 ? (
+                                  <>
+                                    <div className="text-gray-700">
+                                      {[r.usadoMarca, r.usadoModelo].filter(Boolean).join(" ") || "Usado"}
+                                    </div>
+                                    <div className="text-[11px] text-gray-400 tabular-nums">{currency(r.montoRetomaUsado)}</div>
+                                  </>
+                                ) : (
+                                  <span className="text-gray-300">—</span>
+                                )}
+                              </td>
                             </tr>
                           ))}
                         </tbody>

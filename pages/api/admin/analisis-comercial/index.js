@@ -70,25 +70,27 @@ async function handler(req, res) {
   // arriba.
   const [porVendedorHistorico, porVendedorEnVivo] = await Promise.all([
     db.$queryRawUnsafe(
-      `SELECT h.vendedorNombre AS vendedor, h.sucursal AS agencia, COUNT(*) AS n
+      `SELECT h.vendedorNombre AS vendedor, h.sucursal AS agencia, MONTH(h.fechaAlta) AS mes, COUNT(*) AS n
        FROM VentaHistoricoImport h
        LEFT JOIN (SELECT DISTINCT ventaId FROM VentaWebhookLog WHERE TRIM(estado) = 'REGISTRADO') w
          ON w.ventaId = h.ventaId
        WHERE YEAR(h.fechaAlta) = ? AND w.ventaId IS NULL
          AND h.vendedorNombre IS NOT NULL AND h.vendedorNombre != ''
-       GROUP BY vendedor, agencia`,
+       GROUP BY vendedor, agencia, mes`,
       anioActual
     ),
     db.$queryRawUnsafe(
-      `SELECT vendedorNombre AS vendedor, TRIM(sucursal) AS agencia, COUNT(DISTINCT ventaId) AS n
+      `SELECT vendedorNombre AS vendedor, TRIM(sucursal) AS agencia, MONTH(fechaAlta) AS mes, COUNT(DISTINCT ventaId) AS n
        FROM VentaWebhookLog
        WHERE TRIM(estado) = 'REGISTRADO' AND YEAR(fechaAlta) = ?
          AND vendedorNombre IS NOT NULL AND vendedorNombre != ''
-       GROUP BY vendedor, agencia`,
+       GROUP BY vendedor, agencia, mes`,
       anioActual
     ),
   ]);
   const porVendedorMap = new Map();
+  // Mismo conteo desglosado por mes, para el filtro de mes del ranking.
+  const porVendedorMesMap = new Map();
   for (const r of [...porVendedorHistorico, ...porVendedorEnVivo]) {
     // El webhook en vivo trae el nombre del vendedor con un espacio al final
     // en algunos casos (mismo tipo de dato crudo que "estado"), mientras el
@@ -96,11 +98,19 @@ async function handler(req, res) {
     // filas distintas del ranking (una por fuente).
     const vendedor = (r.vendedor || "").trim();
     const agencia = normalizarAgencia(r.agencia);
+    const mes = Number(r.mes);
     const key = `${vendedor}|${agencia}`;
     porVendedorMap.set(key, {
       vendedor,
       agencia,
       n: (porVendedorMap.get(key)?.n || 0) + Number(r.n),
+    });
+    const keyMes = `${key}|${mes}`;
+    porVendedorMesMap.set(keyMes, {
+      vendedor,
+      agencia,
+      mes,
+      n: (porVendedorMesMap.get(keyMes)?.n || 0) + Number(r.n),
     });
   }
   // Sin límite (antes .slice(0, 30)): el frontend ahora agrupa por sucursal,
@@ -129,8 +139,21 @@ async function handler(req, res) {
     // startsWith para que sea robusto a eso, igual que el resto del archivo
     // usa TRIM() en las consultas SQL crudas.
     where: { estado: { startsWith: "Registrado" } },
+    // Sin datos del cliente (politica de privacidad del modulo BI).
     select: {
       ventaId: true,
+      fechaAlta: true,
+      marca: true,
+      modelo: true,
+      version: true,
+      color: true,
+      vendedorNombre: true,
+      origen: true,
+      pctDescuento: true,
+      cuotasFinanciadas: true,
+      montoRetomaUsado: true,
+      usadoMarca: true,
+      usadoModelo: true,
       precioLista: true,
       totalTransaccion: true,
       descuentoVendedor: true,
@@ -166,6 +189,7 @@ async function handler(req, res) {
     ventasPorAnioMes: ventasPorAnioMes.map((r) => ({ anio: Number(r.anio), mes: Number(r.mes), n: Number(r.n) })),
     comparativaAlDia,
     porVendedor: porVendedor.map((r) => ({ vendedor: r.vendedor, agencia: r.agencia, n: Number(r.n) })),
+    porVendedorMes: [...porVendedorMesMap.values()],
     rentabilidadHistorico: {
       n: Number(h.n),
       descuentoProm: h.descuentoProm !== null ? Number(h.descuentoProm) : null,
@@ -218,7 +242,30 @@ async function calcularComparativaAlDia() {
   const diaAnt = Math.min(dia, ultimoDiaMesAnt);
   const mesSiguienteAnt = new Date(Date.UTC(anioAnt, mes, 1));
 
-  const [ytdActual, ytdAnterior, mesActual, mesAnterior, mesAnteriorCompleto, [ultima]] = await Promise.all([
+  // Ultima venta con datos: si la base no esta al dia (ej. copia local),
+  // la comparativa "al dia" sale baja sin que sea una caida real.
+  const [ultima] = await db.$queryRawUnsafe(
+    `SELECT MAX(f) AS ultima FROM (
+       SELECT MAX(fechaAlta) AS f FROM VentaHistoricoImport
+       UNION ALL
+       SELECT MAX(fechaAlta) FROM VentaWebhookLog WHERE TRIM(estado) = 'REGISTRADO'
+     ) t`
+  );
+  const ultimaVenta = ultima?.ultima || null;
+
+  // Factor de ritmo para la proyeccion de cierre: mismo rango en ambos anios,
+  // pero cortado en el ultimo dia con datos (no en hoy) para que una base
+  // desactualizada no abarate la proyeccion.
+  let corte = hoyEc;
+  if (ultimaVenta) {
+    const u = new Date(ultimaVenta);
+    const uStr = fechaStr(u.getUTCFullYear(), u.getUTCMonth() + 1, u.getUTCDate());
+    if (uStr < corte && uStr >= fechaStr(anio, 1, 1)) corte = uStr;
+  }
+  const [, mesCorte, diaCorte] = corte.split("-").map(Number);
+  const diaCorteAnt = Math.min(diaCorte, new Date(Date.UTC(anioAnt, mesCorte, 0)).getUTCDate());
+
+  const [ytdActual, ytdAnterior, mesActual, mesAnterior, mesAnteriorCompleto, corteActual, corteAnterior] = await Promise.all([
     contarVentas(fechaStr(anio, 1, 1), diaSiguiente(anio, mes, dia)),
     contarVentas(fechaStr(anioAnt, 1, 1), diaSiguiente(anioAnt, mes, diaAnt)),
     contarVentas(fechaStr(anio, mes, 1), diaSiguiente(anio, mes, dia)),
@@ -227,15 +274,8 @@ async function calcularComparativaAlDia() {
       fechaStr(anioAnt, mes, 1),
       fechaStr(mesSiguienteAnt.getUTCFullYear(), mesSiguienteAnt.getUTCMonth() + 1, 1)
     ),
-    // Ultima venta con datos: si la base no esta al dia (ej. copia local),
-    // la comparativa "al dia" sale baja sin que sea una caida real.
-    db.$queryRawUnsafe(
-      `SELECT MAX(f) AS ultima FROM (
-         SELECT MAX(fechaAlta) AS f FROM VentaHistoricoImport
-         UNION ALL
-         SELECT MAX(fechaAlta) FROM VentaWebhookLog WHERE TRIM(estado) = 'REGISTRADO'
-       ) t`
-    ),
+    contarVentas(fechaStr(anio, 1, 1), diaSiguiente(anio, mesCorte, diaCorte)),
+    contarVentas(fechaStr(anioAnt, 1, 1), diaSiguiente(anioAnt, mesCorte, diaCorteAnt)),
   ]);
 
   return {
@@ -246,7 +286,13 @@ async function calcularComparativaAlDia() {
     dia,
     ytd: { actual: ytdActual, anterior: ytdAnterior },
     mesEnCurso: { actual: mesActual, anterior: mesAnterior, anteriorCompleto: mesAnteriorCompleto },
-    ultimaVenta: ultima?.ultima || null,
+    ultimaVenta,
+    proyeccion: {
+      corte,
+      actual: corteActual,
+      anterior: corteAnterior,
+      factor: corteAnterior ? corteActual / corteAnterior : null,
+    },
   };
 }
 
