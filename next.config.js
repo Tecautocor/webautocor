@@ -21,6 +21,11 @@ const nextConfig = {
     // tumbar el proceso por memoria - causaba caidas intermitentes del sitio.
     unoptimized: true,
   },
+  // La landing del evento se renombró de /race-track a /activacion;
+  // se mantiene el link viejo para no romper los ya compartidos.
+  async redirects() {
+    return [{ source: "/race-track", destination: "/activacion", permanent: false }];
+  },
 };
 
 module.exports = nextConfig;

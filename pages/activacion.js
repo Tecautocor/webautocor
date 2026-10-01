@@ -20,19 +20,7 @@ const features = [
   { icon: TagIcon, label: "Los mejores precios" },
 ];
 
-const fireworks = [
-  { top: "-16px", left: "-10%", color: "#fbbf24", delay: "0s", tx: "-30px", ty: "-24px" },
-  { top: "-20px", left: "20%", color: "#f87171", delay: "0.2s", tx: "-6px", ty: "-32px" },
-  { top: "-18px", left: "50%", color: "#34d399", delay: "0.4s", tx: "10px", ty: "-30px" },
-  { top: "-14px", left: "80%", color: "#60a5fa", delay: "0.6s", tx: "30px", ty: "-20px" },
-  { top: "-6px", left: "100%", color: "#facc15", delay: "0.8s", tx: "34px", ty: "0px" },
-  { top: "10px", left: "95%", color: "#a78bfa", delay: "1s", tx: "28px", ty: "20px" },
-  { top: "14px", left: "60%", color: "#f472b6", delay: "1.2s", tx: "12px", ty: "26px" },
-  { top: "16px", left: "25%", color: "#fb923c", delay: "1.4s", tx: "-14px", ty: "24px" },
-  { top: "8px", left: "-8%", color: "#38bdf8", delay: "1.6s", tx: "-30px", ty: "10px" },
-];
-
-export default function RaceTrack() {
+export default function Activacion() {
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -61,7 +49,7 @@ export default function RaceTrack() {
   return (
     <>
       <Head>
-        <title>Race Track | AUTOCOR</title>
+        <title>Activación | AUTOCOR</title>
         <meta name="robots" content="noindex, nofollow" />
       </Head>
 
@@ -69,73 +57,6 @@ export default function RaceTrack() {
         {/* Fondo con degradado rojo/negro */}
         <div className="absolute inset-0 bg-gradient-to-br from-red-950 via-black to-black" />
         <div className="absolute -top-20 -left-20 w-[300px] h-[300px] sm:-top-40 sm:-left-40 sm:w-[600px] sm:h-[600px] bg-main/20 rounded-full blur-3xl" />
-
-        <div className="absolute top-8 left-4 z-20 animate__animated animate__pulse animate__infinite animate__slow">
-          <span className="inline-flex items-center gap-3">
-            <svg
-              viewBox="0 0 30 20"
-              className="w-14 h-9 sm:w-16 sm:h-10 shrink-0 shadow-lg"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <rect x="0" y="0" width="30" height="4" fill="#75AADB" />
-              <rect x="0" y="4" width="30" height="4" fill="#ffffff" />
-              <rect x="0" y="8" width="30" height="4" fill="#75AADB" />
-              <rect x="0" y="12" width="30" height="4" fill="#ffffff" />
-              <rect x="0" y="16" width="30" height="4" fill="#75AADB" />
-              {[9, 15, 21].map((cx) => (
-                <g key={cx} transform={`translate(${cx - 1.6}, 8.4) scale(0.032)`}>
-                  <path
-                    d="M50 5 L61 39 L98 39 L68 60 L79 95 L50 73 L21 95 L32 60 L2 39 L39 39 Z"
-                    fill="#ffffff"
-                  />
-                </g>
-              ))}
-            </svg>
-            <span className="relative inline-block">
-              <span className="relative z-10 text-white text-base sm:text-lg font-bold uppercase tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                ¡Viva Guayaquil!
-              </span>
-              {fireworks.map((fw, i) => (
-                <span
-                  key={i}
-                  className="firework-spark"
-                  style={{
-                    top: fw.top,
-                    left: fw.left,
-                    background: fw.color,
-                    boxShadow: `0 0 10px 4px ${fw.color}`,
-                    animationDelay: fw.delay,
-                    "--tx": fw.tx,
-                    "--ty": fw.ty,
-                  }}
-                />
-              ))}
-              <style jsx>{`
-                .firework-spark {
-                  position: absolute;
-                  width: 7px;
-                  height: 7px;
-                  border-radius: 50%;
-                  opacity: 0;
-                  animation: fw-spark 1.8s ease-out infinite;
-                }
-                @keyframes fw-spark {
-                  0% {
-                    transform: translate(0, 0) scale(0.3);
-                    opacity: 1;
-                  }
-                  70% {
-                    opacity: 1;
-                  }
-                  100% {
-                    transform: translate(var(--tx), var(--ty)) scale(1);
-                    opacity: 0;
-                  }
-                }
-              `}</style>
-            </span>
-          </span>
-        </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-8 lg:py-12 w-full min-w-0">
           <div className="flex justify-end">
@@ -158,7 +79,7 @@ export default function RaceTrack() {
               </span>
 
               <h1 className="mt-6 font-poppins font-black uppercase text-4xl sm:text-6xl lg:text-8xl leading-none text-white drop-shadow-[0_0_25px_rgba(228,61,48,0.5)] break-words">
-                Race Track
+                Activación
               </h1>
 
               <p className="mt-6 text-base sm:text-lg text-white/70 font-light">
