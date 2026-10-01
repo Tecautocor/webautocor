@@ -78,7 +78,7 @@ export default function Activacion() {
                 Evento Exclusivo
               </span>
 
-              <h1 className="mt-6 font-poppins font-black uppercase text-4xl sm:text-6xl lg:text-8xl leading-none text-white drop-shadow-[0_0_25px_rgba(228,61,48,0.5)] break-words">
+              <h1 className="mt-6 font-poppins font-black uppercase text-4xl sm:text-7xl lg:text-6xl xl:text-7xl leading-none whitespace-nowrap text-white drop-shadow-[0_0_25px_rgba(228,61,48,0.5)]">
                 Activación
               </h1>
 
